@@ -1,7 +1,7 @@
 # core/config.py
 
 from functools import lru_cache
-
+from typing import Literal
 from pydantic import EmailStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -18,7 +18,7 @@ class Settings(BaseSettings):
 
     # Security
     SECRET_KEY: str
-    ALGORITHM: str = "HS256"
+    ALGORITHM: Literal["HS256", "HS384", "HS512"] = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
 
