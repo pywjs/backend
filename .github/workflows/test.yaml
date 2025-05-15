@@ -19,7 +19,7 @@ jobs:
           enable-cache: 'auto'
       - name: Install dependencies
         run: |
-          uv run sync --group test dev
+          uv sync --dev --group test
 
       - name: Run tests
         run: |
