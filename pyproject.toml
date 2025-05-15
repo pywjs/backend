@@ -4,7 +4,13 @@ version = "0.1.0"
 description = "The FastAPI Backend for the pywjs core."
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "fastapi>=0.115.12",
+    "pydantic-settings>=2.9.1",
+    "pydantic[email]>=2.11.4",
+    "python-multipart>=0.0.20",
+    "uvicorn>=0.34.2",
+]
 
 [dependency-groups]
 dev = [
