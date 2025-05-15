@@ -8,6 +8,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from core.database import AsyncSession, get_session
 from apps.users.services import (
     authenticate_user,
+    get_user_by_id,
 )
 
 from apps.users.schemas import UserLogin
@@ -104,3 +105,29 @@ async def refresh_token(data: RefreshTokenRequest):
         refresh_token=jwt.create_refresh_token(str(payload.sub)),
         token_type="bearer",
     )
+
+
+# ------------------------------------------
+# POST /auth/verify
+# Verify email using verification token
+# ------------------------------------------
+@router.get("/verify")
+async def verify_email(token: str, session: AsyncSession = Depends(get_session)):
+    jwt = get_jwt()
+
+    try:
+        data = jwt.decode_token(token, kind="verification")
+        payload = TokenPayload(**data)
+    except ValueError as e:
+        raise HTTPException(status_code=401, detail="Invalid verification token") from e
+
+    user = await get_user_by_id(payload.sub, session)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.is_verified = True
+    session.add(user)
+    await session.commit()
+    await session.refresh(user)
+
+    return {"message": "Email verified successfully"}

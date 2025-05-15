@@ -1,9 +1,29 @@
 # core/config.py
+from email.utils import parseaddr
 
 from functools import lru_cache
 from typing import Literal
 from pydantic import EmailStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from typing import Annotated
+from pydantic import BeforeValidator
+
+
+# ------------------------------------------
+# Validators
+# ------------------------------------------
+
+
+def validate_smtp_from(value: str) -> str:
+    name, email = parseaddr(value)
+    if not email or "@" not in email:
+        raise ValueError(f"Invalid SMTP_FROM format: {value}")
+    return value
+
+
+# ------------------------------------------
+# Settings
+# ------------------------------------------
 
 
 class Settings(BaseSettings):
@@ -27,12 +47,14 @@ class Settings(BaseSettings):
     ADMIN_PASSWORD: str
 
     # SMTP
-    SMTP_HOST: str | None = None
+    SMTP_HOST: str
     SMTP_PORT: int = 587
     SMTP_USER: str | None = None
     SMTP_PASSWORD: str | None = None
-    SMTP_FROM: str = "pywjs backend <noreply>@pywjs.com"
-    SMTP_TLS: bool = True
+    SMTP_FROM: Annotated[str, BeforeValidator(validate_smtp_from)] = (
+        "pywjs backend <noreply@pywjs.com>"
+    )
+    SMTP_TLS: bool = False
     SMTP_SSL: bool = False
 
 

@@ -26,7 +26,7 @@ class JWTAuth:
         self,
         subject: str,
         expires_delta: timedelta,
-        kind: Literal["access", "refresh"] = "access",
+        kind: Literal["access", "refresh", "verification"] = "access",
         extra: dict[str, Any] | None = None,
     ) -> str:
         now = datetime.now(timezone.utc)
@@ -84,7 +84,13 @@ class JWTAuth:
         expires_delta = timedelta(minutes=self.refresh_token_expire_minutes)
         return self._create_token(subject, expires_delta, "refresh", extra)
 
+    def create_verification_token(self, subject: str, extra: dict | None = None) -> str:
+        expires_delta = timedelta(minutes=self.access_token_expire_minutes)
+        return self._create_token(subject, expires_delta, "verification", extra)
+
     def decode_token(
-        self, token: str, kind: Literal["access", "refresh"] | None = None
+        self,
+        token: str,
+        kind: Literal["access", "refresh", "verification"] | None = None,
     ) -> dict:
         return self._decode(token, kind)

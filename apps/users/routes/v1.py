@@ -1,8 +1,9 @@
 # apps/users/routes/v1.py
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from ulid import ULID
+from core.security import get_jwt
 from apps.auth.deps import staff_token, active_token, admin_token
 from apps.users.schemas import UserRead, UserCreate, UserUpdate, UserUpdateMe
 from core.database import AsyncSession, get_session
@@ -13,8 +14,10 @@ from apps.users.services import (
     update_user,
     delete_user,
 )
+from utils.email import send_verification_email
 
 router = APIRouter(prefix="/v1/users", tags=["v1/users"])
+jwt = get_jwt()
 
 # ------------------------------------------
 # POST /users
@@ -23,10 +26,18 @@ router = APIRouter(prefix="/v1/users", tags=["v1/users"])
 
 @router.post("/", response_model=UserRead)
 async def create_new_user(
-    user: UserCreate, session: AsyncSession = Depends(get_session)
+    user: UserCreate,
+    background_tasks: BackgroundTasks,
+    session: AsyncSession = Depends(get_session),
 ):
     try:
         new_user = await create_user(user, session)
+        token = jwt.create_verification_token(str(new_user.id))
+        background_tasks.add_task(
+            send_verification_email,
+            str(new_user.email),
+            token,
+        )
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

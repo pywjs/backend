@@ -4,7 +4,6 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from pydantic import EmailStr
 from sqlmodel import select
 from ulid import ULID
-
 from apps.users.models import User
 from apps.users.schemas import UserCreate, UserUpdate, UserUpdateMe
 from core.security import get_pwd_hasher
