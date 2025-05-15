@@ -2,6 +2,12 @@
 
 from fastapi import FastAPI
 from utils.version import get_version
+from utils.logging import setup_logging
+
+# ------------------------------------------
+# Logging Configuration
+# ------------------------------------------
+setup_logging()
 
 
 # ------------------------------------------
