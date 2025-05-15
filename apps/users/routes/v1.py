@@ -14,7 +14,7 @@ from apps.users.services import (
     delete_user,
 )
 
-router = APIRouter(prefix="/v1/users", tags=["users"])
+router = APIRouter(prefix="/v1/users", tags=["v1/users"])
 
 # ------------------------------------------
 # POST /users

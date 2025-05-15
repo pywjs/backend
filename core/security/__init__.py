@@ -14,8 +14,6 @@ def get_jwt() -> JWTAuth:
     return JWTAuth(
         secret=settings.SECRET_KEY,
         algorithm=settings.ALGORITHM,
-        issuer=settings.ISSUER,
-        audience=settings.AUDIENCE,
         access_token_expire_minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES,
         refresh_token_expire_minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES,
     )

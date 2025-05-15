@@ -13,7 +13,7 @@ from apps.users.services import (
 from apps.users.schemas import UserLogin
 from core.security import get_jwt
 
-router = APIRouter(prefix="/v1/auth", tags=["auth"])
+router = APIRouter(prefix="/v1/auth", tags=["v1/auth"])
 
 # ------------------------------------------
 # POST /auth/token
