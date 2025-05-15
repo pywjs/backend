@@ -2,6 +2,10 @@ name: Tests
 on:
   push:
     branches: [ main ]
+    paths-ignore:
+      - '**.md'
+      - '**.txt'
+      - '.gitignore'
   pull_request:
     branches: [ main ]
   workflow_dispatch:
