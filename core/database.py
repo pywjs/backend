@@ -14,10 +14,12 @@ from apps.users import models as users  # noqa: F401
 from sqlmodel import SQLModel  # noqa: F401
 
 settings = get_settings()
+DATABASE_URL = settings.DATABASE_URL
+
 
 # Async Engine for FastAPI App
 engine = create_async_engine(
-    settings.DATABASE_URL,
+    DATABASE_URL,
     echo=settings.DEBUG,
     future=True,
 )
