@@ -1,6 +1,25 @@
-def main():
-    print("Hello from backend!")
+# main.py
+
+from fastapi import FastAPI
+from utils.version import get_version
 
 
-if __name__ == "__main__":
-    main()
+# ------------------------------------------
+# FastAPI App Definition
+# ------------------------------------------
+app = FastAPI(
+    title="pywjs API",
+    description="pywjs API documentation",
+    version=get_version(),
+)
+
+
+# ------------------------------------------
+# API Routes
+# ------------------------------------------
+
+
+# Health Check
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}
