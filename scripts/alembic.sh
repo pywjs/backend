@@ -2,6 +2,9 @@
 
 set -e # Exit immediately if a command exits with a non-zero status.
 
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
 # Load environment variables from .env file if present
 if [ -f ".env" ]; then
   set -o allexport
@@ -28,7 +31,7 @@ migrate)
   ;;
 migration)
   if [ -z "$MSG" ]; then
-    echo "Error: Migration message is required."
+    echo -e "${RED}Error: Migration message is required.${NC}"
     help
     exit 1
   fi
