@@ -11,6 +11,7 @@ from typing import AsyncGenerator
 # ------------------------------------------
 from apps.users import models as users  # noqa: F401
 from apps.cms.models import page  # noqa: F401
+from apps.cms.models import post  # noqa: F401
 from apps.cms.models import navigation  # noqa: F401
 
 # ----After importing all other models----
