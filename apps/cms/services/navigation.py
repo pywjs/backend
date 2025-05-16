@@ -110,7 +110,15 @@ async def create_navigation_item(
     session.add(item)
     await session.commit()
     await session.refresh(item)
-    return item
+
+    # Explicitly reload with children
+    stmt = (
+        select(NavigationItem)
+        .where(NavigationItem.id == item.id)
+        .options(selectinload(NavigationItem.children))
+    )
+    result = await session.exec(stmt)
+    return result.one()
 
 
 async def get_navigation_item_by_id(
