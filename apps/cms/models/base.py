@@ -2,7 +2,7 @@
 from datetime import datetime, UTC
 from sqlalchemy import JSON
 from ulid import ULID
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, SQLModel, DateTime
 
 
 def current_time():
@@ -21,9 +21,13 @@ class BaseContent(SQLModel, table=False):
     body_field: str = "json"  # Default to JSON [json, html, markdown]
     is_published: bool = False
     # Datetime fields
-    created_at: datetime = Field(default_factory=current_time)
-    updated_at: datetime = Field(default_factory=current_time)
-    published_at: datetime | None = None  # Date when the content was published
+    created_at: datetime = Field(
+        default_factory=current_time, sa_type=DateTime(timezone=True)
+    )  # type: ignore
+    updated_at: datetime = Field(
+        default_factory=current_time, sa_type=DateTime(timezone=True)
+    )  # type: ignore
+    published_at: datetime | None = Field(default=None, sa_type=DateTime(timezone=True))  # type: ignore
 
     # Computed body property
     @property
