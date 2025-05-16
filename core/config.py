@@ -36,6 +36,18 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str
 
+    # Storage
+    STORAGE_BACKEND: Literal["local", "s3"] = "local"
+    # Local storage
+    UPLOADS_ROOT: str = "uploads"
+    UPLOADS_URL: str = "/uploads"
+    # S3 storage
+    AWS_ACCESS_KEY_ID: str | None = None
+    AWS_SECRET_ACCESS_KEY: str | None = None
+    S3_REGION_NAME: str | None = None
+    S3_BUCKET_NAME: str | None = None
+    S3_ENDPOINT_URL: str | None = None
+
     # Security
     SECRET_KEY: str
     ALGORITHM: Literal["HS256", "HS384", "HS512"] = "HS256"
