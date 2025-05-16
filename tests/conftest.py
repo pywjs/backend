@@ -7,7 +7,7 @@ from typing import AsyncGenerator
 from main import app
 from core.database import get_session
 from sqlmodel import SQLModel
-
+import asyncio
 
 # ------------------------------------------
 # Test settings
@@ -46,21 +46,31 @@ app.dependency_overrides[get_session] = override_get_session
 # ----------------------------------
 # Run once per test session: create schema
 # ----------------------------------
+
+
+# Required for session-level async fixtures
 @pytest.fixture(scope="session")
 def event_loop():
-    import asyncio
-
     loop = asyncio.new_event_loop()
     yield loop
     loop.close()
 
 
-@pytest.fixture(scope="session", autouse=True)
+# Run per test to avoid asyncio issues with session-scoped fixtures
+@pytest.fixture(scope="function", autouse=True)
 async def setup_database():
     """Create tables before tests."""
     async with engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.drop_all)
         await conn.run_sync(SQLModel.metadata.create_all)
+
+
+# ----------------------------------
+# Async test client using ASGITransport
+# ----------------------------------
+@pytest.fixture
+def anyio_backend():
+    return "asyncio"
 
 
 @pytest.fixture
