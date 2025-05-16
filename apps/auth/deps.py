@@ -7,7 +7,7 @@ from core.security import get_jwt
 from typing import Annotated
 from .schemas import TokenPayload
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="v1/auth/token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 
 
 # ------------------------------------------

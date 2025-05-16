@@ -1,4 +1,4 @@
-# apps/auth/routes/v1.py
+# apps/auth/endpoints.py
 
 from fastapi import APIRouter
 from apps.auth.schemas import TokenResponse, TokenPayload
@@ -14,7 +14,7 @@ from apps.users.services import (
 from apps.users.schemas import UserLogin
 from core.security import get_jwt
 
-router = APIRouter(prefix="/v1/auth", tags=["v1/auth"])
+router = APIRouter()
 
 # ------------------------------------------
 # POST /auth/token

@@ -1,4 +1,4 @@
-# apps/users/routes/v1.py
+# apps/users/endpoints.py
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
@@ -16,7 +16,7 @@ from apps.users.services import (
 )
 from utils.email import send_verification_email
 
-router = APIRouter(prefix="/v1/users", tags=["v1/users"])
+router = APIRouter()
 
 # ------------------------------------------
 # POST /users

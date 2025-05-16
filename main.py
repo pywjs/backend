@@ -3,8 +3,9 @@
 from fastapi import FastAPI
 from utils.version import get_version
 from utils.logging import setup_logging
-from apps.auth.routes.v1 import router as auth_router_v1
-from apps.users.routes.v1 import router as users_router_v1
+from apps.auth.endpoints import router as auth_router
+from apps.users.endpoints import router as users_router
+
 
 # ------------------------------------------
 # Logging Configuration
@@ -25,8 +26,8 @@ app = FastAPI(
 # ------------------------------------------
 # Routers
 # ------------------------------------------
-app.include_router(auth_router_v1)
-app.include_router(users_router_v1)
+app.include_router(auth_router, prefix="/auth", tags=["auth"])
+app.include_router(users_router, prefix="/users", tags=["users"])
 
 
 # Health Check
