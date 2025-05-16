@@ -8,7 +8,7 @@ from main import app
 from core.database import get_session
 from sqlmodel import SQLModel
 import asyncio
-
+from unittest.mock import AsyncMock
 # ------------------------------------------
 # Test settings
 # ------------------------------------------
@@ -79,3 +79,12 @@ async def client():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         yield client
+
+
+# ----------------------------------
+# Patch email sending
+# ----------------------------------
+@pytest.fixture(autouse=True)
+def mock_send_verification_email(monkeypatch):
+    """Mock the send_verification_email function globally."""
+    monkeypatch.setattr("utils.email.send_verification_email", AsyncMock())
