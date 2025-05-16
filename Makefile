@@ -18,6 +18,12 @@ help:
 	@printf "\n"
 
 
+## Make .env from the .env.ini template
+env:
+	@echo "Creating .env from .env.ini template"
+	@./scripts/env.sh
+	@echo "Done"
+
 ## Create a alembic revision
 migration:
 	@./scripts/alembic.sh migration "$msg"
