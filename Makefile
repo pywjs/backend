@@ -1,5 +1,5 @@
 efault: help
-.PHONY: help migration migrate downgrade history
+.PHONY: help env test test-cov test-cov-o clean migration migrate downgrade history
 
 ## This help screen
 help:
