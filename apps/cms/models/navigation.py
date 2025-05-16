@@ -33,5 +33,9 @@ class NavigationItem(SQLModel, table=True):
     # Self-referencing nesting
     # noinspection SpellCheckingInspection
     parent_id: str | None = Field(default=None, foreign_key="navigationitem.id")
-    parent: Optional["NavigationItem"] = Relationship(back_populates="children")
+    # Define remote side for SQLAlchemy to disambiguate
+    parent: Optional["NavigationItem"] = Relationship(
+        back_populates="children",
+        sa_relationship_kwargs={"remote_side": "NavigationItem.id"},
+    )
     children: list["NavigationItem"] = Relationship(back_populates="parent")

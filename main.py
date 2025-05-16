@@ -5,6 +5,7 @@ from utils.version import get_version
 from utils.logging import setup_logging
 from apps.auth.endpoints import router as auth_router
 from apps.users.endpoints import router as users_router
+from apps.cms.endpoints import router as cms_router
 
 
 # ------------------------------------------
@@ -28,6 +29,7 @@ app = FastAPI(
 # ------------------------------------------
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
 app.include_router(users_router, prefix="/users", tags=["users"])
+app.include_router(cms_router, prefix="/cms", tags=["cms"])
 
 
 # Health Check
