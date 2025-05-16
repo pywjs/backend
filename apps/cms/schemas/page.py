@@ -1,5 +1,4 @@
 # apps/cms/schemas/page.py
-from sqlmodel import SQLModel
 from ulid import ULID
 from .base import (
     BaseContentSchema,
@@ -9,13 +8,11 @@ from .base import (
 )
 
 
-class PageCreate(SQLModel, BaseContentSchema, BaseMetadataSchema, BaseTimestampSchema):
+class PageCreate(BaseContentSchema, BaseMetadataSchema, BaseTimestampSchema):
     pass
 
 
-class PageUpdate(
-    SQLModel, BaseContentUpdateSchema, BaseMetadataSchema, BaseTimestampSchema
-):
+class PageUpdate(BaseContentUpdateSchema, BaseMetadataSchema, BaseTimestampSchema):
     pass
 
 

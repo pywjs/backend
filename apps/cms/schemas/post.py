@@ -1,5 +1,4 @@
 # apps/cms/schemas/post.py
-from sqlmodel import SQLModel
 from ulid import ULID
 from .base import (
     BaseContentSchema,
@@ -9,14 +8,12 @@ from .base import (
 )
 
 
-class PostCreate(SQLModel, BaseContentSchema, BaseMetadataSchema, BaseTimestampSchema):
+class PostCreate(BaseContentSchema, BaseMetadataSchema, BaseTimestampSchema):
     category: str | None = None
     tags: list[str] | None = None
 
 
-class PostUpdate(
-    SQLModel, BaseContentUpdateSchema, BaseMetadataSchema, BaseTimestampSchema
-):
+class PostUpdate(BaseContentUpdateSchema, BaseMetadataSchema, BaseTimestampSchema):
     category: str | None = None
     tags: list[str] | None = None
 
