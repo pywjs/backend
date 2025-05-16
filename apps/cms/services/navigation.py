@@ -78,10 +78,12 @@ async def delete_navigation(nav_id: str, session: AsyncSession) -> bool:
 
 
 async def create_navigation_item(
-    data: NavigationItemCreate, session: AsyncSession
+    navigation_id: str, data: NavigationItemCreate, session: AsyncSession
 ) -> NavigationItem:
     slug = data.slug or slugify(data.title)
-    item = NavigationItem(**data.model_dump(exclude={"slug"}), slug=slug)
+    item = NavigationItem(
+        **data.model_dump(exclude={"slug"}), slug=slug, navigation_id=navigation_id
+    )
     session.add(item)
     await session.commit()
     await session.refresh(item)
