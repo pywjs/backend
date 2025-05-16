@@ -11,7 +11,6 @@ import asyncio
 from unittest.mock import AsyncMock
 from core.config import Settings
 
-
 # ------------------------------------------
 # Test settings
 # ------------------------------------------
@@ -39,7 +38,7 @@ def patch_settings(monkeypatch):
     mock_settings = Settings(
         DATABASE_URL="sqlite+aiosqlite:///:memory:",
         SECRET_KEY="test-secret",
-        ADMIN_EMAIL="test@example.com",
+        ADMIN_EMAIL="test@example.com",  # type: ignore
         ADMIN_PASSWORD="test123",
         SMTP_HOST="smtp.test.local",
         SMTP_PORT=587,
