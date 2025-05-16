@@ -51,7 +51,9 @@ class JWTAuth:
         )
 
     def _decode(
-        self, token: str, kind: Literal["access", "refresh"] | None = None
+        self,
+        token: str,
+        kind: Literal["access", "refresh", "verification"] | None = None,
     ) -> dict:
         options = {"require": ["exp", "sub", "kind"]}
         try:
