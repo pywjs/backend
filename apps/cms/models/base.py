@@ -1,12 +1,9 @@
 # apps/cms/models/base.py
-from datetime import datetime, UTC
+from datetime import datetime
 from sqlalchemy import JSON
 from ulid import ULID
 from sqlmodel import Field, SQLModel, DateTime
-
-
-def current_time():
-    return datetime.now(UTC)
+from utils.time import current_time
 
 
 class BaseContent(SQLModel, table=False):
