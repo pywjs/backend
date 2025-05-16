@@ -54,3 +54,7 @@ class NavigationUpdate(SQLModel):
 class NavigationRead(NavigationBase):
     id: str | ULID | None = Field(default_factory=lambda: str(ULID()), primary_key=True)
     items: list[NavigationItemRead] = []
+
+
+# Since the navigation items are self-referential, we need to use a forward reference
+NavigationItemRead.model_rebuild()
