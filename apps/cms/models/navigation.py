@@ -8,7 +8,7 @@ from ulid import ULID
 class Navigation(SQLModel, table=True):
     id: str | None = Field(default_factory=lambda: str(ULID()), primary_key=True)
     name: str  # e.g. "main", "footer", "sidebar"
-    slug: str  # e.g. "main-navigation"
+    slug: str = Field(unique=True)  # e.g. "main-navigation"
     is_active: bool = True  # Is this navigation active?
 
     items: list["NavigationItem"] = Relationship(back_populates="navigation")

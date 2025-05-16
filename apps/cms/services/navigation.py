@@ -1,5 +1,7 @@
 # apps/cms/services/navigation.py
-
+from fastapi import HTTPException, status
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import selectinload
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -24,13 +26,34 @@ async def create_navigation(
     slug = data.slug or slugify(data.name)
     nav = Navigation(**data.model_dump(exclude={"slug"}), slug=slug)
     session.add(nav)
-    await session.commit()
-    await session.refresh(nav)
-    return nav
+    try:
+        await session.commit()
+        await session.refresh(nav)
+    except IntegrityError:
+        await session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Navigation with this title/slug already exists",
+        )
+
+    # Explicitly load the items after refresh
+    stmt = (
+        select(Navigation)
+        .where(Navigation.id == nav.id)
+        .options(selectinload(Navigation.items))
+    )
+    result = await session.exec(stmt)
+    return result.one()
 
 
 async def get_navigation_by_id(nav_id: str, session: AsyncSession) -> Navigation | None:
-    return await session.get(Navigation, nav_id)
+    stmt = (
+        select(Navigation)
+        .where(Navigation.id == nav_id)
+        .options(selectinload("Navigation.items"))
+    )
+    result = await session.exec(stmt)
+    return result.one_or_none()
 
 
 async def get_navigation_by_slug(slug: str, session: AsyncSession) -> Navigation | None:
@@ -40,7 +63,7 @@ async def get_navigation_by_slug(slug: str, session: AsyncSession) -> Navigation
 
 
 async def list_navigations(session: AsyncSession) -> list[Navigation]:
-    stmt = select(Navigation)
+    stmt = select(Navigation).options(selectinload(Navigation.items))
     result = await session.exec(stmt)
     return result.all()
 
