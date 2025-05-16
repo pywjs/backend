@@ -2,7 +2,7 @@
 import pytest
 from apps.auth.schemas import TokenPayload
 from ulid import ULID
-from apps.auth.deps import active_token, staff_token, admin_token
+from apps.auth.deps import active_token, staff_token, admin_token, get_token_payload
 from fastapi import HTTPException
 
 # Get new ULID for test
@@ -33,6 +33,42 @@ def staff_user(active_user):
 @pytest.fixture
 def admin_user(staff_user):
     return staff_user.model_copy(update={"is_admin": True})
+
+
+# --------------------------------------------
+# Token Payload Tests
+# --------------------------------------------
+@pytest.mark.anyio
+async def test_token_payload(monkeypatch):
+    class MockJWT:
+        def decode_token(self, token: str, kind: str):
+            return {
+                "sub": TEMP_ULID,
+                "iat": 1680000000,
+                "exp": 1680003600,
+                "user_email": "user@example.com",
+                "is_active": True,
+                "is_staff": False,
+                "is_admin": False,
+            }
+
+    monkeypatch.setattr("apps.auth.deps.get_jwt", lambda: MockJWT())
+    # test valid token
+    result = await get_token_payload(token="valid-token")
+    assert isinstance(result, TokenPayload)
+    assert result.is_active is True
+
+    # Test invalid token
+    class MockJWTInvalid:
+        def decode_token(self, token: str, kind: str):
+            raise ValueError("Invalid token")
+
+    monkeypatch.setattr("apps.auth.deps.get_jwt", lambda: MockJWTInvalid())
+    with pytest.raises(HTTPException) as exc:
+        await get_token_payload(token="invalid-token")
+
+    assert exc.value.status_code == 401
+    assert "Invalid token" in exc.value.detail
 
 
 # --------------------------------------------
