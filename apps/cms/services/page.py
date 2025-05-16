@@ -40,11 +40,26 @@ async def update_page(
     if not page:
         return None
 
+    # Check if is_published is being changed
+    is_published_changed = "is_published" in data.model_dump(exclude_unset=True)
+    was_published = page.is_published
+
+    # Update page attributes
     for key, value in data.model_dump(exclude_unset=True, exclude={"slug"}).items():
         setattr(page, key, value)
 
     if data.slug and data.slug != page.slug:
         page.slug = data.slug
+
+    # Handle publishing status changes
+    if is_published_changed:
+        if page.is_published and not was_published:
+            page.publish()
+        elif not page.is_published and was_published:
+            page.unpublish()
+    else:
+        # Update timestamp if other fields were changed
+        page.update_timestamp()
 
     await session.commit()
     await session.refresh(page)

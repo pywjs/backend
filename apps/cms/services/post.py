@@ -39,11 +39,26 @@ async def update_post(
     if not post:
         return None
 
+    # Check if is_published is being changed
+    is_published_changed = "is_published" in data.model_dump(exclude_unset=True)
+    was_published = post.is_published
+
+    # Update post attributes
     for key, value in data.model_dump(exclude_unset=True, exclude={"slug"}).items():
         setattr(post, key, value)
 
     if data.slug and data.slug != post.slug:
         post.slug = data.slug
+
+    # Handle publishing status changes
+    if is_published_changed:
+        if post.is_published and not was_published:
+            post.publish()
+        elif not post.is_published and was_published:
+            post.unpublish()
+    else:
+        # Update timestamp if other fields were changed
+        post.update_timestamp()
 
     await session.commit()
     await session.refresh(post)

@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Literal
 
 from sqlmodel import SQLModel, Field
-from pydantic import HttpUrl
+from pydantic import HttpUrl, field_serializer
 
 
 class BaseContentSchema(SQLModel):
@@ -38,6 +38,12 @@ class BaseMetadataSchema(SQLModel):
     og_image_url: HttpUrl | None = None
     og_type: str | None = Field(default="website")
     structured_data: dict | None = None
+
+    @field_serializer("canonical_url", "og_image_url", when_used="always")
+    def serialize_url(self, v: HttpUrl | None) -> str | None:
+        if isinstance(v, HttpUrl):
+            return str(v)
+        return v
 
 
 class BaseTimestampSchema(SQLModel):

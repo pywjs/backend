@@ -36,6 +36,30 @@ class BaseContent(SQLModel, table=False):
             return self.body_markdown
         return None
 
+    def update_timestamp(self):
+        """Update the updated_at timestamp to the current time."""
+        self.updated_at = current_time()
+
+    def publish(self):
+        """Publish the content and set the published_at timestamp."""
+        if not self.is_published:
+            self.is_published = True
+            self.published_at = current_time()
+            self.update_timestamp()
+
+    def unpublish(self):
+        """Unpublish the content but keep the published_at timestamp for reference."""
+        if self.is_published:
+            self.is_published = False
+            self.update_timestamp()
+
+    @property
+    def is_scheduled(self) -> bool:
+        """Check if content is scheduled for future publication."""
+        if not self.published_at:
+            return False
+        return self.published_at > current_time() and not self.is_published
+
 
 class BaseMetadata(SQLModel, table=False):
     """Abstract reusable base metadata for Page models."""
