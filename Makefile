@@ -24,6 +24,15 @@ env:
 	@./scripts/env.sh
 	@echo "Done"
 
+
+## Test
+test:
+	@uv run pytest
+
+## Test with coverage
+test-cov:
+	@uv run pytest --cov=apps --cov-report=term-missing --cov-report=html && open htmlcov/index.html
+
 ## Create a alembic revision
 migration:
 	@./scripts/alembic.sh migration "$msg"
