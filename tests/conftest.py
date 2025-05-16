@@ -57,7 +57,7 @@ def event_loop():
 
 
 # Run per test to avoid asyncio issues with session-scoped fixtures
-@pytest.fixture(scope="function", autouse=True)
+@pytest.fixture(scope="function")
 async def setup_database():
     """Create tables before tests."""
     async with engine.begin() as conn:
