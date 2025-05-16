@@ -1,8 +1,6 @@
 # apps/cms/models/base.py
 from datetime import datetime, UTC
 
-from typing import Literal
-from pydantic import AnyHttpUrl
 from ulid import ULID
 from sqlmodel import Field, SQLModel
 
@@ -20,7 +18,7 @@ class BaseContent(SQLModel, table=False):
     body_json: str | None = None
     body_html: str | None = None
     body_markdown: str | None = None
-    body_field: Literal["json", "html", "markdown"] = "json"  # Default to JSON
+    body_field: str = "json"  # Default to JSON [json, html, markdown]
     is_published: bool = False
     # Datetime fields
     created_at: datetime = Field(default_factory=current_time)
@@ -45,8 +43,8 @@ class BaseMetadata(SQLModel, table=False):
     # SEO fields
     meta_title: str | None = None  # SEO title, if different from the page title
     meta_description: str | None = None  # Short description for search engines
-    meta_keywords: list[str] | None = None  # Keywords for search engines
-    canonical_url: AnyHttpUrl | None = (
+    meta_keywords: str | None = None  # Keywords for search engines
+    canonical_url: str | None = (
         None  # Canonical URL to prevent duplicate content issues
     )
     robots_directives: str | None = (
@@ -54,9 +52,16 @@ class BaseMetadata(SQLModel, table=False):
     )
     og_title: str | None = None  # Open Graph title for social media sharing
     og_description: str | None = None  # Open Graph description for social media sharing
-    og_image_url: AnyHttpUrl | None = None  # URL to image for social media sharing
+    og_image_url: str | None = None  # URL to image for social media sharing
     og_type: str | None = "website"  # Open Graph content type
     structured_data: str | None = None  # JSON-LD structured data for rich snippets
+
+    @property
+    def meta_keywords_list(self):
+        """Convert meta_keywords string to a list."""
+        if self.meta_keywords:
+            return [keyword.strip() for keyword in self.meta_keywords.split(",")]
+        return []
 
 
 class BasePage(BaseContent, BaseMetadata, table=False):

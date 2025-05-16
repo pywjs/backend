@@ -10,6 +10,10 @@ from typing import AsyncGenerator
 # Import all models !BEFORE! importing SQLModel to ensure that they are registered
 # ------------------------------------------
 from apps.users import models as users  # noqa: F401
+from apps.cms.models import page  # noqa: F401
+from apps.cms.models import navigation  # noqa: F401
+
+# ----After importing all other models----
 from sqlmodel import SQLModel  # noqa: F401
 
 
