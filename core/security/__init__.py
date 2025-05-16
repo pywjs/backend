@@ -6,11 +6,9 @@ from .crypto import PasswordHasher
 from core.config import get_settings
 
 
-settings = get_settings()
-
-
 @lru_cache()
 def get_jwt() -> JWTAuth:
+    settings = get_settings()
     return JWTAuth(
         secret=settings.SECRET_KEY,
         algorithm=settings.ALGORITHM,

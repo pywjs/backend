@@ -31,7 +31,12 @@ test:
 
 ## Test with coverage
 test-cov:
+	@uv run pytest --cov=apps --cov-report=term-missing --cov-report=html
+
+## Test with coverage and open the report in browser
+test-cov-o:
 	@uv run pytest --cov=apps --cov-report=term-missing --cov-report=html && open htmlcov/index.html
+
 
 ## Create a alembic revision
 migration:

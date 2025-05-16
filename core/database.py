@@ -2,7 +2,6 @@
 
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
-from core.config import get_settings
 from typing import AsyncGenerator
 
 
@@ -13,25 +12,31 @@ from typing import AsyncGenerator
 from apps.users import models as users  # noqa: F401
 from sqlmodel import SQLModel  # noqa: F401
 
-settings = get_settings()
-DATABASE_URL = settings.DATABASE_URL
+
+# Lazy async_engine builder
+def get_async_engine():
+    from core.config import get_settings
+
+    settings = get_settings()
+    return create_async_engine(
+        settings.DATABASE_URL,
+        echo=settings.DEBUG,
+        future=True,
+    )
 
 
-# Async Engine for FastAPI App
-engine = create_async_engine(
-    DATABASE_URL,
-    echo=settings.DEBUG,
-    future=True,
-)
-
-async_session = async_sessionmaker(
-    bind=engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
-)
+# Lazy async_sessionmaker
+def get_async_sessionmaker():
+    engine = get_async_engine()
+    return async_sessionmaker(
+        bind=engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+    )
 
 
 # Dependency for FastAPI
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
+    async_session = get_async_sessionmaker()
     async with async_session() as session:
         yield session

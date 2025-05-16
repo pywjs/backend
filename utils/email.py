@@ -7,12 +7,10 @@ from core.config import get_settings
 from utils.logging import logger
 from fastapi.concurrency import run_in_threadpool
 
-settings = get_settings()
-
 
 def _send_email_sync(to_email: str, subject: str, body: str, from_email: str = None):
+    settings = get_settings()
     sender_email = from_email or settings.SMTP_FROM
-
     msg = MIMEText(body, "plain")
     msg["Subject"] = subject
     msg["From"] = sender_email
@@ -48,6 +46,7 @@ async def send_email(to_email: str, subject: str, body: str, from_email: str = N
 
 
 def send_verification_email(to_email: str, token: str):
+    settings = get_settings()
     verification_url = f"https://127.0.0.1:8000/v1/auth/verify?token={token}"
     subject = "[pywjs] Verify your email for your account"
     body = f"Hi,\n\nPlease verify your email address by clicking the link below:\n\n{verification_url}\n\nIf you did not sign up, ignore this email."

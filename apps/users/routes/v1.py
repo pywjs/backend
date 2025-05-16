@@ -17,7 +17,6 @@ from apps.users.services import (
 from utils.email import send_verification_email
 
 router = APIRouter(prefix="/v1/users", tags=["v1/users"])
-jwt = get_jwt()
 
 # ------------------------------------------
 # POST /users
@@ -31,6 +30,7 @@ async def create_new_user(
     session: AsyncSession = Depends(get_session),
 ):
     try:
+        jwt = get_jwt()
         new_user = await create_user(user, session)
         token = jwt.create_verification_token(str(new_user.id))
         background_tasks.add_task(

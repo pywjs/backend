@@ -34,7 +34,7 @@ TestingSessionLocal = async_sessionmaker(
 )
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="function", autouse=True)
 def patch_settings(monkeypatch):
     mock_settings = Settings(
         DATABASE_URL="sqlite+aiosqlite:///:memory:",
