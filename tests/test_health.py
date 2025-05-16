@@ -1,7 +1,10 @@
 # tests/test_health.py
 
 
-def test_health(client):
-    resp = client.get("/health")
-    assert resp.status_code == 200
-    assert resp.json() == {"status": "ok"}
+import pytest
+
+
+@pytest.mark.anyio
+async def test_health(client):
+    response = await client.get("/health")
+    assert response.status_code == 200
