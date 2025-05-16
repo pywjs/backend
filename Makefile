@@ -37,6 +37,15 @@ test-cov:
 test-cov-o:
 	@uv run pytest --cov=apps --cov-report=term-missing --cov-report=html && open htmlcov/index.html
 
+## Cleanup the code base (remove the tests and coverage files)
+clean:
+	@echo "Cleaning up the code base"
+	@find . -name "*.pyc" -delete
+	@find . -name "__pycache__" -delete
+	@find . -name ".coverage" -delete
+	@find . -name ".pytest_cache" -delete
+	@find . -name "htmlcov" -type d -exec rm -rf {} +
+	@echo "Done"
 
 ## Create a alembic revision
 migration:
