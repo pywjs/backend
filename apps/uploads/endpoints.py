@@ -21,7 +21,12 @@ router = APIRouter()
 # Authenticated
 # ------------------------------------------
 @router.post("/")
-async def upload(file: UploadFile = File(...), _=Depends(active_token)):
+async def upload(
+    file: UploadFile = File(...),
+    public: bool = False,
+    _=Depends(active_token),
+    session=Depends(get_session),
+):
     storage = get_storage()
     file_name = file.filename
     try:
