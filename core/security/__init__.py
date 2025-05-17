@@ -1,19 +1,21 @@
 # core/security/__init__.py
 
 from functools import lru_cache
-from .jwt import JWTAuth
+from .jwt import JWT
 from .crypto import PasswordHasher
-from core.config import get_settings
 
 
 @lru_cache()
-def get_jwt() -> JWTAuth:
+def get_jwt() -> JWT:
+    from core.config import get_settings
+
     settings = get_settings()
-    return JWTAuth(
+    return JWT(
         secret=settings.SECRET_KEY,
         algorithm=settings.ALGORITHM,
         access_token_expire_minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES,
         refresh_token_expire_minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES,
+        verification_token_expire_minutes=settings.VERIFICATION_TOKEN_EXPIRE_MINUTES,
     )
 
 

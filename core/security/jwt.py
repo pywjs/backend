@@ -32,12 +32,19 @@ class JWTTokenPayload(BaseModel):
 
 
 class JWT:
-    def __init__(self, secret: str, algorithm: str = "HS256"):
-        from core.config import get_settings
-
-        self._settings = get_settings()
+    def __init__(
+        self,
+        secret: str,
+        algorithm: str = "HS256",
+        access_token_expire_minutes: int = 30,  # 30 minutes
+        refresh_token_expire_minutes: int = 60 * 24 * 7,  # 7 days
+        verification_token_expire_minutes: int = 5,  # 5 minutes
+    ):
         self.secret = secret
         self.algorithm = algorithm
+        self.access_token_expire_minutes = access_token_expire_minutes
+        self.refresh_token_expire_minutes = refresh_token_expire_minutes
+        self.verification_token_expire_minutes = verification_token_expire_minutes
 
     def create_token(
         self,
@@ -92,7 +99,7 @@ class JWT:
                 "type": "access",
             }
         )
-        expire_delta = timedelta(minutes=self._settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire_delta = timedelta(minutes=self.access_token_expire_minutes)
         return self._create_jwt_token(data, expire_delta)
 
     def _create_refresh_token(self, data: TokenUser) -> str:
@@ -102,7 +109,7 @@ class JWT:
                 "type": "refresh",
             }
         )
-        expire_delta = timedelta(minutes=self._settings.REFRESH_TOKEN_EXPIRE_MINUTES)
+        expire_delta = timedelta(minutes=self.refresh_token_expire_minutes)
         return self._create_jwt_token(data, expire_delta)
 
     def _create_verification_token(self, data: TokenUser) -> str:
@@ -117,7 +124,5 @@ class JWT:
                 "type": "verification",
             }
         )
-        expire_delta = timedelta(
-            minutes=self._settings.VERIFICATION_TOKEN_EXPIRE_MINUTES
-        )
+        expire_delta = timedelta(minutes=self.verification_token_expire_minutes)
         return self._create_jwt_token(data, expire_delta)
