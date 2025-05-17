@@ -10,9 +10,14 @@ from apps.uploads.storages import get_storage
 from sqlmodel import select
 import hashlib
 
+from core.security.jwt import TokenUser
+
 
 async def save_upload_file(
-    file: UploadFile, user: User, session: AsyncSession, public: bool = False
+    file: UploadFile,
+    user: User | TokenUser,
+    session: AsyncSession,
+    public: bool = False,
 ) -> UploadRead:
     storage = get_storage(public=public)
     file_bytes = await file.read()

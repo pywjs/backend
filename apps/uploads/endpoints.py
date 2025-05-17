@@ -12,6 +12,7 @@ from apps.uploads.services import (
     save_upload_file,
 )
 from core.database import get_session
+from core.security.jwt import TokenUser
 
 router = APIRouter()
 
@@ -24,10 +25,10 @@ router = APIRouter()
 async def upload(
     file: UploadFile = File(...),
     public: bool = False,
-    user=Depends(active_token),
+    token_user: TokenUser = Depends(active_token),
     session=Depends(get_session),
 ):
-    return await save_upload_file(file, user, session, public)
+    return await save_upload_file(file, token_user, session, public)
 
 
 @router.get("/", response_model=list[UploadRead])

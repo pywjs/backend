@@ -2,10 +2,10 @@
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-
 from core.security import get_jwt
-from typing import Annotated
-from .schemas import TokenPayload
+from apps.users.models import User
+from core.security.jwt import TokenUser
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 
@@ -16,12 +16,12 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 # ------------------------------------------
 
 
-async def parse_token(token: str = Depends(oauth2_scheme)):
+async def _get_token_data(token: str = Depends(oauth2_scheme)) -> TokenUser:
     """Parse the token and return the payload."""
     try:
-        jwt_auth = get_jwt()
-        data = jwt_auth.decode_token(token, kind="access")
-        return TokenPayload(**data)
+        _jwt = get_jwt()
+        token_user = _jwt.token_data(token)
+        return token_user
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -30,45 +30,77 @@ async def parse_token(token: str = Depends(oauth2_scheme)):
         )
 
 
-async def get_token_payload(
-    token: Annotated[str, Depends(oauth2_scheme)],
-) -> TokenPayload:
-    """Get the token payload from the JWT token."""
-    try:
-        jwt_auth = get_jwt()
-        data = jwt_auth.decode_token(token, kind="access")
-        return TokenPayload(**data)
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-
-async def active_token(payload: TokenPayload = Depends(get_token_payload)):
-    if not payload.is_active:
+async def active_user_token(
+    token_user: TokenUser = Depends(_get_token_data),
+) -> TokenUser:
+    """Check if the user is active."""
+    if not token_user.is_active:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Inactive user",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    return payload
+    return token_user
 
 
-async def staff_token(payload: TokenPayload = Depends(active_token)):
-    if not payload.is_staff:
+async def staff_user_token(
+    token_user: TokenUser = Depends(active_user_token),
+) -> TokenUser:
+    """Check if the user is staff."""
+    if not token_user.is_staff:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Staff privileges required",
         )
-    return payload
+    return token_user
 
 
-async def admin_token(payload: TokenPayload = Depends(staff_token)):
-    if not payload.is_admin:
+async def admin_user_token(
+    token_user: TokenUser = Depends(active_user_token),
+) -> TokenUser:
+    """Check if the user is admin."""
+    if not token_user.is_admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin privileges required",
         )
-    return payload
+    return token_user
+
+
+# ------------------------------------------
+# Token + User in DB Dependencies
+# Cheks the user both in the token and in the DB
+# ------------------------------------------
+
+
+async def get_user_or_401(user_id: str, session: AsyncSession) -> User:
+    """Get user from DB or raise 401."""
+    user_db = await session.get(User, user_id)
+    if not user_db:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return user_db
+
+
+async def active_user(
+    session: AsyncSession, token_user: TokenUser = Depends(active_user_token)
+) -> User:
+    """Check if the user is active."""
+    return await get_user_or_401(token_user.id, session)
+
+
+async def staff_user(
+    session: AsyncSession, token_user: TokenUser = Depends(staff_user_token)
+) -> User:
+    """Check if the user is staff."""
+    return await get_user_or_401(token_user.id, session)
+
+
+async def admin_user(
+    session: AsyncSession, token_user: TokenUser = Depends(admin_user_token)
+) -> User:
+    """Check if the user is admin."""
+    return await get_user_or_401(token_user.id, session)

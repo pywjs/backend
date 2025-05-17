@@ -16,6 +16,10 @@ class TokenUser(BaseModel):
     is_staff: bool | None = False
     is_admin: bool | None = False
 
+    @property
+    def sub(self) -> str:
+        return str(self.id)
+
 
 class TokenPair(BaseModel):
     access: str
@@ -68,7 +72,7 @@ class JWT:
         payload = self._decode_jwt(token)
         return TokenUser(**payload)
 
-    def _encode_jwt(self, payload: dict[str, Any]) -> str:
+    def _encode_jwt(self, payload: JWTTokenPayload) -> str:
         return _jwt.encode(payload, self.secret, algorithm=self.algorithm)
 
     def _decode_jwt(self, token: str) -> dict[str, Any]:
@@ -80,12 +84,12 @@ class JWT:
         except _jwt.InvalidTokenError:
             raise ValueError("Invalid token")
 
-    def _create_jwt_token(self, data: JWTTokenPayload, expire_delta: timedelta) -> str:
-        data = data.model_dump()
+    def _create_jwt_token(self, data: dict[str, Any], expire_delta: timedelta) -> str:
+        sub = data.get("id")
         iat = datetime.now(UTC)
         exp = iat + expire_delta
-        data.update({"iat": iat, "exp": exp})
-        return self._encode_jwt(data)
+        payload = JWTTokenPayload.model_construct(sub=sub, iat=iat, exp=exp, **data)
+        return self._encode_jwt(payload)
 
     def _create_access_token(self, data: TokenUser) -> str:
         """

@@ -9,10 +9,13 @@ from core.database import AsyncSession, get_session
 from apps.users.services import (
     authenticate_user,
     get_user_by_id,
+    get_user_by_email,
 )
 
 from apps.users.schemas import UserLogin
 from core.security import get_jwt
+from core.security import get_pwd_hasher
+from core.security.jwt import TokenUser
 
 router = APIRouter()
 
@@ -28,28 +31,28 @@ async def login_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     session: AsyncSession = Depends(get_session),
 ):
-    user = await authenticate_user(form_data.username, form_data.password, session)
-    if not user:
+    pwd_hasher = get_pwd_hasher()
+    # Authenticate user
+    form_email = form_data.username
+    form_password = form_data.password
+    # Check if user exists
+    user = await get_user_by_email(form_email, session)
+    # Check if the password is correct
+    if not user or not pwd_hasher.verify(form_password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
-
+    # Check if the user is active
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Inactive user",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     jwt = get_jwt()
-    return TokenResponse(
-        access_token=jwt.create_access_token(
-            str(user.id),
-            extra={
-                "user_email": user.email,
-                "is_active": user.is_active,
-                "is_staff": user.is_staff,
-                "is_admin": user.is_admin,
-            },
-        ),
-        refresh_token=jwt.create_refresh_token(str(user.email)),
-        token_type="bearer",
-    )
+    return jwt.create_token(data=TokenUser(**user.model_dump()), type="pair")
 
 
 # ------------------------------------------
