@@ -12,9 +12,9 @@ import hashlib
 
 
 async def save_upload_file(
-    file: UploadFile, user: User, session: AsyncSession
+    file: UploadFile, user: User, session: AsyncSession, public: bool = False
 ) -> UploadRead:
-    storage = get_storage()
+    storage = get_storage(public=public)
     file_bytes = await file.read()
     file.file.seek(0)  # rewind for actual upload
 

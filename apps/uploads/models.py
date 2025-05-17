@@ -12,7 +12,7 @@ class Upload(SQLModel, table=True):
     file_name: str
     url: str
     reference_count: int = 0
-    is_public: bool = False
+    public: bool = False
     # metadata fields
     title: str | None = None
     description: str | None = None

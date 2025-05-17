@@ -10,7 +10,7 @@ class UploadBase(SQLModel):
     file_name: str
     url: HttpUrl | str
     reference_count: int = 0
-    is_public: bool = False
+    public: bool = False
     title: Optional[str] = None
     description: Optional[str] = None
     content_type: Optional[str] = None
@@ -33,4 +33,4 @@ class UploadRead(UploadBase):
 class UploadUpdate(UploadBase):
     title: str | None = None
     description: str | None = None
-    is_public: bool | None = None
+    public: bool | None = None
