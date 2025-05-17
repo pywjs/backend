@@ -29,6 +29,7 @@ async def save_upload_file(
     upload_data = UploadCreate(
         file_name=file_name,
         url=file_url,
+        public=public,
         owner_id=user.id,
         content_type=file.content_type,
         size=len(file_bytes),

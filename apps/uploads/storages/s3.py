@@ -11,7 +11,7 @@ class S3Storage(BaseStorage):
     def __init__(self, public: bool = False):
         self.public = public
         self._settings = get_settings()
-        self.bucket_name = self._settings.AWS_STORAGE_BUCKET_NAME
+        self.bucket_name = self._settings.S3_BUCKET_NAME
         self.s3_client_kwargs = {
             "service_name": "s3",
             "aws_access_key_id": self._settings.AWS_ACCESS_KEY_ID,

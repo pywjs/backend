@@ -9,8 +9,8 @@ from apps.uploads.services import (
     delete_upload_file,
     list_all_uploads,
     list_user_uploads,
+    save_upload_file,
 )
-from apps.uploads.storages import get_storage
 from core.database import get_session
 
 router = APIRouter()
@@ -24,18 +24,10 @@ router = APIRouter()
 async def upload(
     file: UploadFile = File(...),
     public: bool = False,
-    _=Depends(active_token),
+    user=Depends(active_token),
     session=Depends(get_session),
 ):
-    storage = get_storage()
-    file_name = file.filename
-    try:
-        # Generate a unique file name
-        await storage.upload_file(file, file_name)
-        url = storage.get_url(file_name)
-        return {"filename": file_name, "url": url}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    return await save_upload_file(file, user, session, public)
 
 
 @router.get("/", response_model=list[UploadRead])
