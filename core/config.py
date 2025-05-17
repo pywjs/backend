@@ -53,6 +53,7 @@ class Settings(BaseSettings):
     ALGORITHM: Literal["HS256", "HS384", "HS512"] = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
+    VERIFICATION_TOKEN_EXPIRE_MINUTES = 5  # 5 minutes
 
     # Admin
     ADMIN_EMAIL: EmailStr

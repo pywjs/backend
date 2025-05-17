@@ -16,6 +16,20 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 # ------------------------------------------
 
 
+async def parse_token(token: str = Depends(oauth2_scheme)):
+    """Parse the token and return the payload."""
+    try:
+        jwt_auth = get_jwt()
+        data = jwt_auth.decode_token(token, kind="access")
+        return TokenPayload(**data)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+
 async def get_token_payload(
     token: Annotated[str, Depends(oauth2_scheme)],
 ) -> TokenPayload:
