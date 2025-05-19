@@ -72,7 +72,6 @@ async def read_current_user(
     token=Depends(active_user_token),
     session: AsyncSession = Depends(get_session),
 ):
-    print(token)
     user = await get_user_by_id(token.sub, session)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")

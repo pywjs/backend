@@ -108,7 +108,7 @@ class JWT:
             return False
 
     def _encode_jwt(self, payload: JWTTokenPayload) -> str:
-        return _jwt.encode(payload, self.secret, algorithm=self.algorithm)
+        return _jwt.encode(payload.model_dump(), self.secret, algorithm=self.algorithm)
 
     def _decode_jwt(self, token: str) -> dict[str, Any]:
         try:
@@ -158,10 +158,6 @@ class JWT:
         :return:
         """
         data = data.model_dump()
-        data.update(
-            {
-                "token_type": "verification",
-            }
-        )
+        data.update({"token_type": "verification"})
         expire_delta = timedelta(minutes=self.verification_token_expire_minutes)
         return self._create_jwt_token(data, expire_delta)
