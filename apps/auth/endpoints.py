@@ -1,21 +1,14 @@
 # apps/auth/endpoints.py
 
 from fastapi import APIRouter
-from apps.auth.schemas import TokenResponse, TokenPayload
-from fastapi import Depends, HTTPException, status
-from apps.auth.schemas import RefreshTokenRequest
+from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
-from core.database import AsyncSession, get_session
-from apps.users.services import (
-    authenticate_user,
-    get_user_by_id,
-    get_user_by_email,
-)
+from pydantic import EmailStr, BaseModel
 
-from apps.users.schemas import UserLogin
-from core.security import get_jwt
-from core.security import get_pwd_hasher
-from core.security.jwt import TokenUser
+from apps.auth.schemas import LoginRequest, RefreshTokenRequest
+from core.security.jwt import TokenPair
+from apps.auth.services import AuthService
+from core.database import AsyncSession, get_session
 
 router = APIRouter()
 
@@ -26,33 +19,16 @@ router = APIRouter()
 # ------------------------------------------
 
 
-@router.post("/token", response_model=TokenResponse)
+@router.post("/token", response_model=TokenPair)
 async def login_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     session: AsyncSession = Depends(get_session),
 ):
-    pwd_hasher = get_pwd_hasher()
     # Authenticate user
-    form_email = form_data.username
-    form_password = form_data.password
-    # Check if user exists
-    user = await get_user_by_email(form_email, session)
-    # Check if the password is correct
-    if not user or not pwd_hasher.verify(form_password, user.hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    # Check if the user is active
-    if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Inactive user",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    jwt = get_jwt()
-    return jwt.create_token(data=TokenUser(**user.model_dump()), type="pair")
+    email: EmailStr = form_data.username  # type: ignore
+    password = form_data.password
+    auth_service = AuthService(session=session)
+    return await auth_service.login(email, password)
 
 
 # ------------------------------------------
@@ -62,29 +38,16 @@ async def login_token(
 # ------------------------------------------
 
 
-@router.post("/login", response_model=TokenResponse)
-async def login(credentials: UserLogin, session: AsyncSession = Depends(get_session)):
-    user = await authenticate_user(credentials.email, credentials.password, session)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    jwt = get_jwt()
-    return TokenResponse(
-        access_token=jwt.create_access_token(
-            str(user.id),
-            extra={
-                "user_email": user.email,
-                "is_active": user.is_active,
-                "is_staff": user.is_staff,
-                "is_admin": user.is_admin,
-            },
-        ),
-        refresh_token=jwt.create_refresh_token(str(user.id)),
-        token_type="bearer",
-    )
+@router.post("/login", response_model=TokenPair)
+async def login(payload: LoginRequest, session: AsyncSession = Depends(get_session)):
+    """
+    Login user with email and password to get access & refresh tokens.
+    :param credentials: LoginRequest(email, password)
+    :param session: AsyncSession
+    :return: TokenPair(access_token, refresh_token)
+    """
+    auth_service = AuthService(session=session)
+    return await auth_service.login(payload.email, payload.password)
 
 
 # ------------------------------------------
@@ -93,38 +56,31 @@ async def login(credentials: UserLogin, session: AsyncSession = Depends(get_sess
 # ------------------------------------------
 
 
-@router.post("/refresh", response_model=TokenResponse)
-async def refresh_token(data: RefreshTokenRequest):
-    jwt = get_jwt()
-
-    try:
-        data = jwt.decode_token(data.refresh_token, kind="refresh")
-        payload = TokenPayload(**data)
-    except ValueError as e:
-        raise HTTPException(status_code=401, detail="Invalid refresh token") from e
-
-    return TokenResponse(
-        access_token=jwt.create_access_token(str(payload.sub)),
-        refresh_token=jwt.create_refresh_token(str(payload.sub)),
-        token_type="bearer",
-    )
+@router.post("/refresh", response_model=TokenPair)
+async def refresh_token(
+    payload: RefreshTokenRequest, session: AsyncSession = Depends(get_session)
+):
+    auth_service = AuthService(session=session)
+    return await auth_service.refresh(payload.refresh_token)
 
 
 # ------------------------------------------
 # POST /auth/verify
 # Verify email using verification token
 # ------------------------------------------
-@router.get("/verify")
+
+
+class MessageResponse(BaseModel):
+    message: str
+
+
+@router.get("/verify", response_model=MessageResponse)
 async def verify_email(token: str, session: AsyncSession = Depends(get_session)):
-    jwt = get_jwt()
-
-    try:
-        data = jwt.decode_token(token, kind="verification")
-        payload = TokenPayload(**data)
-    except ValueError as e:
-        raise HTTPException(status_code=401, detail="Invalid verification token") from e
-
-    user = await get_user_by_id(payload.sub, session)
+    auth_service = AuthService(session=session)
+    if not auth_service.jwt.verify(token, token_type="verification"):
+        raise HTTPException(status_code=401, detail="Invalid verification token")
+    data = auth_service.jwt.token_data(token=token)
+    user = await auth_service.user_service.get_by_id(data.id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 

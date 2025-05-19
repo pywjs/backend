@@ -4,7 +4,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from ulid import ULID
 from core.security import get_jwt
-from apps.auth.deps import staff_token, active_token, admin_token
+from apps.auth.deps import staff_user_token, active_user_token, admin_user_token
 from apps.users.schemas import UserRead, UserCreate, UserUpdate, UserUpdateMe
 from core.database import AsyncSession, get_session
 from apps.users.services import (
@@ -55,7 +55,7 @@ async def create_new_user(
 @router.get("/", response_model=List[UserRead])
 async def read_users(
     session: AsyncSession = Depends(get_session),
-    _=Depends(staff_token),
+    _=Depends(staff_user_token),
 ):
     users = await list_users(session)
     return users
@@ -69,7 +69,7 @@ async def read_users(
 
 @router.get("/me", response_model=UserRead)
 async def read_current_user(
-    token=Depends(active_token),
+    token=Depends(active_user_token),
     session: AsyncSession = Depends(get_session),
 ):
     print(token)
@@ -89,7 +89,7 @@ async def read_current_user(
 async def read_user(
     user_id: ULID,
     session: AsyncSession = Depends(get_session),
-    token=Depends(active_token),
+    token=Depends(active_user_token),
 ):
     # Get DB Resource
     user = await get_user_by_id(user_id, session)
@@ -114,7 +114,7 @@ async def read_user(
 async def update_current_user(
     user_update: UserUpdateMe,
     session: AsyncSession = Depends(get_session),
-    token=Depends(active_token),
+    token=Depends(active_user_token),
 ):
     user = await update_user(token.sub, user_update, session)
     if not user:
@@ -133,7 +133,7 @@ async def update_existing_user(
     user_id: ULID,
     user_update: UserUpdate,
     session: AsyncSession = Depends(get_session),
-    token=Depends(staff_token),
+    token=Depends(staff_user_token),
 ):
     if not token.is_staff:
         raise HTTPException(
@@ -150,7 +150,7 @@ async def update_existing_user(
 
 @router.delete("/me")
 async def delete_own_account(
-    token=Depends(active_token),
+    token=Depends(active_user_token),
     session: AsyncSession = Depends(get_session),
 ):
     user = await get_user_by_id(token.user_id, session)
@@ -172,7 +172,7 @@ async def delete_own_account(
 async def delete_existing_user(
     user_id: ULID,
     session: AsyncSession = Depends(get_session),
-    token=Depends(admin_token),
+    token=Depends(admin_user_token),
 ):
     if not token.is_admin and user_id != token.user_id:
         raise HTTPException(

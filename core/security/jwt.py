@@ -22,8 +22,14 @@ class TokenUser(BaseModel):
 
 
 class TokenPair(BaseModel):
-    access: str
-    refresh: str
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+
+
+class VerificationToken(BaseModel):
+    code: str
+    token_type: str = "bearer"
 
 
 class JWTTokenPayload(BaseModel):
@@ -50,27 +56,56 @@ class JWT:
         self.refresh_token_expire_minutes = refresh_token_expire_minutes
         self.verification_token_expire_minutes = verification_token_expire_minutes
 
-    def create_token(
-        self,
-        data: TokenUser,
-        type: Literal["access", "refresh", "verification", "pair"] = "access",
-    ):
-        if type == "access":
-            return self._create_access_token(data)
-        elif type == "refresh":
-            return self._create_refresh_token(data)
-        elif type == "verification":
-            return self._create_verification_token(data)
-        elif type == "pair":
-            access_token = self._create_access_token(data)
-            refresh_token = self._create_refresh_token(data)
-            return TokenPair(access=access_token, refresh=refresh_token)
-        else:
-            raise ValueError("Invalid token type")
+    def access_token(self, data: TokenUser) -> str:
+        """
+        Create an access token for the user.
+        """
+        return self._create_access_token(data)
+
+    def refresh_token(self, data: TokenUser) -> str:
+        """
+        Create a refresh token for the user.
+        """
+        return self._create_refresh_token(data)
+
+    def verification_token(self, data: TokenUser) -> VerificationToken:
+        """
+        Create a verification token for the user.
+        """
+        return VerificationToken(code=self._create_verification_token(data))
+
+    def token_pair(self, data: TokenUser) -> TokenPair:
+        """
+        Create a pair of access and refresh tokens for the user.
+        """
+        return TokenPair(
+            access_token=self._create_access_token(data),
+            refresh_token=self._create_refresh_token(data),
+        )
 
     def token_data(self, token: str) -> TokenUser:
         payload = self._decode_jwt(token)
         return TokenUser(**payload)
+
+    def verify(
+        self,
+        token: str,
+        token_type: Literal["access", "refresh", "verification", "pair"] = "refresh",
+    ) -> bool:
+        try:
+            payload = self._decode_jwt(token)
+            if token_type == "access":
+                return payload.get("token_type") == "access"
+            elif token_type == "refresh":
+                return payload.get("token_type") == "refresh"
+            elif token_type == "verification":
+                return payload.get("token_type") == "verification"
+            elif token_type == "pair":
+                return payload.get("token_type") in ["access", "refresh"]
+            else:
+                raise ValueError(f"Invalid token_type: {token_type}")
+        except ValueError:
+            return False
 
     def _encode_jwt(self, payload: JWTTokenPayload) -> str:
         return _jwt.encode(payload, self.secret, algorithm=self.algorithm)
@@ -100,7 +135,7 @@ class JWT:
         data = data.model_dump()
         data.update(
             {
-                "type": "access",
+                "token_type": "access",
             }
         )
         expire_delta = timedelta(minutes=self.access_token_expire_minutes)
@@ -110,7 +145,7 @@ class JWT:
         data = data.model_dump()
         data.update(
             {
-                "type": "refresh",
+                "token_type": "refresh",
             }
         )
         expire_delta = timedelta(minutes=self.refresh_token_expire_minutes)
@@ -125,7 +160,7 @@ class JWT:
         data = data.model_dump()
         data.update(
             {
-                "type": "verification",
+                "token_type": "verification",
             }
         )
         expire_delta = timedelta(minutes=self.verification_token_expire_minutes)

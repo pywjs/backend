@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 
-from apps.auth.deps import active_token
+from apps.auth.deps import active_user_token
 from apps.uploads.schemas import UploadRead
 from apps.uploads.services import (
     get_upload_by_id,
@@ -25,7 +25,7 @@ router = APIRouter()
 async def upload(
     file: UploadFile = File(...),
     public: bool = False,
-    token_user: TokenUser = Depends(active_token),
+    token_user: TokenUser = Depends(active_user_token),
     session=Depends(get_session),
 ):
     return await save_upload_file(file, token_user, session, public)
@@ -33,7 +33,7 @@ async def upload(
 
 @router.get("/", response_model=list[UploadRead])
 async def list_all(
-    user=Depends(active_token),
+    user=Depends(active_user_token),
     session=Depends(get_session),
 ):
     result = []
@@ -49,7 +49,7 @@ async def list_all(
 @router.delete("/{upload_id}", status_code=204)
 async def delete_upload(
     upload_id: str,
-    user=Depends(active_token),
+    user=Depends(active_user_token),
     session=Depends(get_session),
 ):
     upload = await get_upload_by_id(upload_id, session=session)
