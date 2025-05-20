@@ -36,7 +36,7 @@ async def create_new_user(
         background_tasks.add_task(
             send_verification_email,
             str(new_user.email),
-            varification_token,
+            varification_token.code,
         )
     except ValueError as e:
         raise HTTPException(

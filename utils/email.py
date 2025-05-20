@@ -47,7 +47,7 @@ async def send_email(to_email: str, subject: str, body: str, from_email: str = N
 
 def send_verification_email(to_email: str, token: str):
     settings = get_settings()
-    verification_url = f"https://127.0.0.1:8000/v1/auth/verify?token={token}"
+    verification_url = f"https://127.0.0.1:8000/auth/verify?token={token}"
     subject = "[pywjs] Verify your email for your account"
     body = f"Hi,\n\nPlease verify your email address by clicking the link below:\n\n{verification_url}\n\nIf you did not sign up, ignore this email."
     _send_email_sync(

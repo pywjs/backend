@@ -76,6 +76,7 @@ class MessageResponse(BaseModel):
 
 @router.get("/verify", response_model=MessageResponse)
 async def verify_email(token: str, session: AsyncSession = Depends(get_session)):
+    print(token)
     auth_service = AuthService(session=session)
     if not auth_service.jwt.verify(token, token_type="verification"):
         raise HTTPException(status_code=401, detail="Invalid verification token")
