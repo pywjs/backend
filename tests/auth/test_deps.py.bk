@@ -2,7 +2,7 @@
 import pytest
 from apps.auth.schemas import TokenPayload
 from ulid import ULID
-from apps.auth.deps import active_token, staff_token, admin_token, get_token_payload
+from apps.auth.deps import active_user_token, staff_user_token, admin_user_token
 from fastapi import HTTPException
 
 # Get new ULID for test

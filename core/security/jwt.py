@@ -142,7 +142,8 @@ class JWT:
         return self._create_jwt_token(data, expire_delta)
 
     def _create_refresh_token(self, data: TokenUser) -> str:
-        data = data.model_dump()
+        """Create a minimal refresh token for the user, only include sub, iat, exp and token_type."""
+        data = data.model_dump(include={"id"})  # we only need the ID from the TokenUser
         data.update(
             {
                 "token_type": "refresh",
