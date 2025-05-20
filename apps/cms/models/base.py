@@ -1,30 +1,17 @@
 # apps/cms/models/base.py
-from datetime import datetime
 from sqlalchemy import JSON
-from ulid import ULID
-from sqlmodel import Field, SQLModel, DateTime
-from utils.time import current_time
+from sqlmodel import Field, SQLModel
+from core.models import BaseTable, SlugMixin, PublishableMixin
 
 
-class BaseContent(SQLModel, table=False):
+class BaseContent(BaseTable, SlugMixin, PublishableMixin, table=False):
     """Base class for all content models in the CMS."""
 
-    id: str | None = Field(default_factory=lambda: str(ULID()), primary_key=True)
     title: str
-    slug: str  # make this unique if necessary in derived classes
     body_json: dict | None = Field(default=None, sa_type=JSON)
     body_html: str | None = None
     body_markdown: str | None = None
     body_field: str = "json"  # Default to JSON [json, html, markdown]
-    is_published: bool = False
-    # Datetime fields
-    created_at: datetime = Field(
-        default_factory=current_time, sa_type=DateTime(timezone=True)
-    )  # type: ignore
-    updated_at: datetime = Field(
-        default_factory=current_time, sa_type=DateTime(timezone=True)
-    )  # type: ignore
-    published_at: datetime | None = Field(default=None, sa_type=DateTime(timezone=True))  # type: ignore
 
     # Computed body property
     @property
