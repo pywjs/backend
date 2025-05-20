@@ -82,6 +82,7 @@ async def get_user_or_401(user_id: str, session: AsyncSession) -> User:
             detail="User not found",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    # noinspection PyTypeChecker
     return user_db
 
 
