@@ -70,6 +70,8 @@ async def admin_user_token(
 # ------------------------------------------
 # Token + User in DB Helpers
 # Cheks the user both in the token and in the DB
+# Those are not dependencies. They mean to be used in the endpoints, and called directly
+#  to separate the services from the database layer.
 # ------------------------------------------
 
 
