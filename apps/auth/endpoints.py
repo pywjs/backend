@@ -34,7 +34,7 @@ async def login_token(
     password = form_data.password
     auth_service = AuthService(session=session)
     try:
-        await auth_service.login(email, password)
+        return await auth_service.login(email, password)
     except (UserNotFoundException, InvalidCredentialsException, UserIsDeletedException):
         raise HTTPException(
             status_code=401,
@@ -43,7 +43,7 @@ async def login_token(
         )
     except UserNotActiveException:
         raise HTTPException(
-            status_code=403,
+            status_code=401,
             detail="Account is not active",
             headers={"WWW-Authenticate": "Bearer"},
         )
@@ -63,7 +63,12 @@ async def login(payload: LoginRequest, session: AsyncSession = Depends(get_sessi
     :return: TokenPair(access_token, refresh_token)
     """
     auth_service = AuthService(session=session)
-    return await auth_service.login(payload.email, payload.password)
+    try:
+        return await auth_service.login(payload.email, payload.password)
+    except (UserNotFoundException, InvalidCredentialsException, UserIsDeletedException):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    except UserNotActiveException:
+        raise HTTPException(status_code=403, detail="Account is not active")
 
 
 # ------------------------------------------

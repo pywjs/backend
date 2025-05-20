@@ -4,12 +4,15 @@ import pytest
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from typing import AsyncGenerator
+
+from core.security import get_pwd_hasher
 from main import app
 from core.database import get_session
 from sqlmodel import SQLModel
 import asyncio
 from unittest.mock import AsyncMock
 from core.config import Settings
+from apps.users.models import User
 
 # ------------------------------------------
 # Test settings
@@ -104,3 +107,35 @@ async def client():
 def mock_send_verification_email(monkeypatch):
     """Mock the send_verification_email function globally."""
     monkeypatch.setattr("utils.email.send_verification_email", AsyncMock())
+
+
+# ----------------------------------
+# Users
+# ----------------------------------
+
+
+@pytest.fixture
+async def create_test_user(setup_database, client: AsyncClient) -> User | None:
+    async for session in override_get_session():
+        password = "test123"
+        user = User(
+            email="test@example.com",
+            hashed_password=get_pwd_hasher().hash(password),
+            is_active=True,
+            is_staff=False,
+            is_admin=False,
+            is_verified=True,
+            is_deleted=False,
+        )
+        session.add(user)
+        await session.commit()
+        await session.refresh(user)
+        return user
+    return None
+
+
+async def save_user_to_db(user: User) -> None:
+    async for session in override_get_session():
+        session.add(user)
+        await session.commit()
+        await session.refresh(user)
