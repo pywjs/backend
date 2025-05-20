@@ -57,7 +57,7 @@ async def staff_user_token(
     if not token_user.is_staff:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Staff privileges required",
+            detail="Permission denied, PRIVILEGES[S*] REQUIRED",
         )
     return token_user
 
@@ -69,7 +69,7 @@ async def admin_user_token(
     if not token_user.is_admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin privileges required",
+            detail="Permission denied, PRIVILEGES[A*] REQUIRED",
         )
     return token_user
 

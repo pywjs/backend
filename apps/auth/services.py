@@ -3,6 +3,13 @@
 from fastapi import HTTPException, status
 from pydantic import EmailStr
 from sqlmodel.ext.asyncio.session import AsyncSession
+
+from apps.auth.exceptions import (
+    UserIsDeletedException,
+    UserNotFoundException,
+    UserNotActiveException,
+    InvalidCredentialsException,
+)
 from apps.users.models import User
 from apps.users.services import UserService
 from core.security import get_jwt, get_pwd_hasher
@@ -19,11 +26,17 @@ class AuthService:
     async def authenticate(self, email: EmailStr, password: str) -> User | None:
         """Authenticate user by email and password."""
         user = await self.user_service.get_user_by_email(email=email)
-        if not user or not self.pwd_hasher.verify(password, user.hashed_password):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect email or password.",
-            )
+        # Check if user exists
+        if not user:
+            raise UserNotFoundException
+        # Check if user is active
+        if not user.is_active:
+            raise UserNotActiveException
+        # Check if user is_deleted
+        if user.is_deleted:
+            raise UserIsDeletedException
+        if not self.pwd_hasher.verify(password, user.hashed_password):
+            raise InvalidCredentialsException
         return user
 
     async def login(self, email: EmailStr, password: str) -> TokenPair:

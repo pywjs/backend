@@ -14,3 +14,10 @@ class ExpiredTokenException(BaseSecurityException):
 
     def __init__(self, message: str = "Token has expired"):
         super().__init__(message)
+
+
+class InvalidTokenTypeException(BaseSecurityException):
+    """Invalid token type exception."""
+
+    def __init__(self, message: str = "Invalid token type"):
+        super().__init__(message)

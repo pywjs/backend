@@ -1,16 +1,48 @@
 # apps/auth/exceptions.py
 from core.exceptions import BaseAppException
-from enum import Enum, auto
 
 
-class AuthErrorCode(Enum):
-    INVALID_CREDENTIALS = auto
-    USER_NOT_FOUND = auto
-    USER_NOT_ACTIVE = auto
-    USER_ALREADY_ACTIVE = auto
+class BaseAuthException(Exception):
+    """Base Exception for all authentication errors."""
+
+    pass
 
 
-class AuthHTTPException(BaseAppException):
-    def __init__(self, message: str, status_code: int):
-        super().__init__(message)
-        self.status_code = status_code
+class InvalidCredentialsException(BaseAuthException):
+    """Exception raised for invalid credentials."""
+
+    pass
+
+
+class UserNotFoundException(BaseAuthException):
+    """Exception raised when a user is not found in the database."""
+
+    pass
+
+
+class UserNotActiveException(BaseAppException):
+    """Exception raised when a user is not active."""
+
+    pass
+
+
+class UserNotVerifiedException(BaseAppException):
+    """Exception raised when a user is not verified."""
+
+    pass
+
+
+class UserAlreadyExistsException(BaseAppException):
+    """Exception raised when a user already exists."""
+
+    pass
+
+
+class UserIsDeletedException(BaseAppException):
+    """Exception raised when a user is deleted."""
+
+    pass
+
+
+class AuthErrorCode:
+    pass

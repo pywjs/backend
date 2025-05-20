@@ -15,9 +15,6 @@ from apps.users.models import User
 from apps.users.schemas import UserRead, UserCreate, UserUpdate, UserUpdateMe
 from core.database import get_session
 from apps.users.services import (
-    get_user_by_id,
-    update_user,
-    delete_user,
     UserService,
 )
 from core.security.jwt import TokenUser
@@ -25,11 +22,10 @@ from utils.email import send_verification_email
 
 router = APIRouter()
 
+
 # ------------------------------------------
 # POST /users
 # ------------------------------------------
-
-
 @router.post("/", response_model=UserRead)
 async def create_new_user(
     user: UserCreate,
@@ -57,8 +53,6 @@ async def create_new_user(
 # GET /users
 # Require: Staff
 # ------------------------------------------
-
-
 @router.get("/", response_model=List[UserRead])
 async def read_users(
     session: AsyncSession = Depends(get_session),
@@ -72,16 +66,14 @@ async def read_users(
 # GET /users/me
 # Self
 # ------------------------------------------
-
-
 @router.get("/me", response_model=UserRead)
 async def read_current_user(
-    token: TokenUser = Depends(active_user_token),
+    token_user: TokenUser = Depends(active_user_token),
     session: AsyncSession = Depends(get_session),
 ):
     user_service = UserService(session=session)
-    user = await user_service.get_by_id(token.id)
-    if not user:
+    user = await user_service.get_by_id(token_user.id)
+    if not user or user.is_deleted:
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
@@ -90,8 +82,6 @@ async def read_current_user(
 # GET /users/{user_id}
 # Self | Staff
 # ------------------------------------------
-
-
 @router.get("/{user_id}", response_model=UserRead)
 async def read_user(
     user_id: ULID,
@@ -124,7 +114,7 @@ async def update_current_user(
 ):
     user_service = UserService(session=session)
     user = await user_service.update_by_id(
-        user_update.id, user_update.model_dump(exclude_unset=True)
+        token_user.id, user_update.model_dump(exclude_unset=True)
     )
     return user
 
@@ -133,37 +123,42 @@ async def update_current_user(
 # PATCH /users/{user_id}
 # Staff
 # ------------------------------------------
-
-
 @router.patch("/{user_id}", response_model=UserRead)
 async def update_existing_user(
     user_id: ULID,
     user_update: UserUpdate,
     session: AsyncSession = Depends(get_session),
-    token=Depends(staff_user_token),
+    token_user: TokenUser = Depends(staff_user_token),
 ):
-    if not token.is_staff:
+    if not token_user.is_staff:
         raise HTTPException(
             status_code=403,
             detail="Permission Denied",
         )
 
-    user = await update_user(user_id, user_update, session)
+    user_service = UserService(session=session)
+    user = await user_service.update_by_id(
+        str(user_id), user_update.model_dump(exclude_unset=True)
+    )
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-
     return user
 
 
 @router.delete("/me")
 async def delete_own_account(
-    token=Depends(active_user_token),
+    token_user: TokenUser = Depends(active_user_token),
     session: AsyncSession = Depends(get_session),
 ):
-    user = await get_user_by_id(token.user_id, session)
+    user_service = UserService(session=session)
+    user = await user_service.get_by_id(token_user.id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-
+    if user.is_staff:
+        raise HTTPException(
+            status_code=403,
+            detail="Staff accounts cannot be deleted",
+        )
     # Soft delete
     user.is_deleted = True
     session.add(user)
@@ -179,14 +174,16 @@ async def delete_own_account(
 async def delete_existing_user(
     user_id: ULID,
     session: AsyncSession = Depends(get_session),
-    token=Depends(admin_user_token),
+    token_user: TokenUser = Depends(admin_user_token),
 ):
-    if not token.is_admin and user_id != token.user_id:
+    # Only Staff or Admin can delete users
+    if not token_user.is_admin and user_id != token_user.user_id:
         raise HTTPException(
             status_code=403,
             detail="Permission Denied",
         )
-    success = await delete_user(user_id, session)
-    if not success:
+    user_service = UserService(session=session)
+    user = await user_service.delete_by_id(str(user_id))
+    if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return {"detail": "User deleted successfully"}
