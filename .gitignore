@@ -3,3 +3,4 @@
 # If you need to exclude files such as those from IDE, use
 # the global .gitignore file instead (https://git-scm.com/docs/gitignore)
 # ------------------------------------------
+/uploads

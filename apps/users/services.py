@@ -7,6 +7,7 @@ from ulid import ULID
 from apps.users.models import User
 from apps.users.schemas import UserCreate, UserUpdate, UserUpdateMe
 from core.security import get_pwd_hasher
+from core.services import BaseService
 
 pwd_hasher = get_pwd_hasher()
 
@@ -95,3 +96,38 @@ async def authenticate_user(
     if not user or not pwd_hasher.verify(password, user.hashed_password):
         return None
     return user
+
+
+class UserService(BaseService):
+    def __init__(self, session: AsyncSession):
+        super().__init__(model=User, session=session)
+
+    async def get_user_by_email(self, email: EmailStr) -> User | None:
+        # We accept EmailStr so we want to verify it from the input, but the database requires a string.
+        email_in_db = str(email)
+        stmt = select(User).where(User.email == email_in_db)
+        result = await self.session.exec(stmt)
+        return result.one_or_none()
+
+    async def create_user(self, user_data: UserCreate) -> User:
+        """Create a new user.
+        Args:
+            user_data (UserCreate):
+                - email: EmailStr
+                - password: str
+        """
+        existing_user = await self.get_user_by_email(user_data.email)
+        if existing_user:
+            raise ValueError("User already exists")
+
+        new_user = User(
+            email=user_data.email,
+            hashed_password=pwd_hasher.hash(user_data.password),
+            is_active=True,
+            is_staff=False,
+            is_superuser=False,
+        )
+        self.session.add(new_user)
+        await self.session.commit()
+        await self.session.refresh(new_user)
+        return new_user

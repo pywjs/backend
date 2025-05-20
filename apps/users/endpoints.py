@@ -3,26 +3,29 @@ from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from ulid import ULID
-from core.security import get_jwt
-from apps.auth.deps import staff_token, active_token, admin_token
-from apps.users.schemas import UserRead, UserCreate, UserUpdate, UserUpdateMe
-from core.database import AsyncSession, get_session
-from apps.users.services import (
-    create_user,
-    get_user_by_id,
-    list_users,
-    update_user,
-    delete_user,
+from sqlmodel.ext.asyncio.session import AsyncSession
+from apps.auth.services import AuthService
+from apps.auth.deps import (
+    staff_user_token,
+    active_user_token,
+    admin_user_token,
+    active_user,
 )
+from apps.users.models import User
+from apps.users.schemas import UserRead, UserCreate, UserUpdate, UserUpdateMe
+from core.database import get_session
+from apps.users.services import (
+    UserService,
+)
+from core.security.jwt import TokenUser
 from utils.email import send_verification_email
 
 router = APIRouter()
 
+
 # ------------------------------------------
 # POST /users
 # ------------------------------------------
-
-
 @router.post("/", response_model=UserRead)
 async def create_new_user(
     user: UserCreate,
@@ -30,13 +33,13 @@ async def create_new_user(
     session: AsyncSession = Depends(get_session),
 ):
     try:
-        jwt = get_jwt()
-        new_user = await create_user(user, session)
-        token = jwt.create_verification_token(str(new_user.id))
+        auth_service = AuthService(session=session)
+        new_user = await auth_service.user_service.create_user(user)
+        varification_token = auth_service.jwt.verification_token(new_user)
         background_tasks.add_task(
             send_verification_email,
             str(new_user.email),
-            token,
+            varification_token.code,
         )
     except ValueError as e:
         raise HTTPException(
@@ -50,31 +53,27 @@ async def create_new_user(
 # GET /users
 # Require: Staff
 # ------------------------------------------
-
-
 @router.get("/", response_model=List[UserRead])
 async def read_users(
     session: AsyncSession = Depends(get_session),
-    _=Depends(staff_token),
+    _=Depends(staff_user_token),
 ):
-    users = await list_users(session)
-    return users
+    user_service = UserService(session=session)
+    return await user_service.get_all()
 
 
 # ------------------------------------------
 # GET /users/me
 # Self
 # ------------------------------------------
-
-
 @router.get("/me", response_model=UserRead)
 async def read_current_user(
-    token=Depends(active_token),
+    token_user: TokenUser = Depends(active_user_token),
     session: AsyncSession = Depends(get_session),
 ):
-    print(token)
-    user = await get_user_by_id(token.sub, session)
-    if not user:
+    user_service = UserService(session=session)
+    user = await user_service.get_by_id(token_user.id)
+    if not user or user.is_deleted:
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
@@ -83,21 +82,18 @@ async def read_current_user(
 # GET /users/{user_id}
 # Self | Staff
 # ------------------------------------------
-
-
 @router.get("/{user_id}", response_model=UserRead)
 async def read_user(
     user_id: ULID,
     session: AsyncSession = Depends(get_session),
-    token=Depends(active_token),
+    token_user: TokenUser = Depends(active_user_token),
 ):
-    # Get DB Resource
-    user = await get_user_by_id(user_id, session)
+    user: User = await active_user(session, token_user)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
     # Check Access
-    if not (token.is_staff or user_id == token.user_id):
+    if user.id != user_id and not user.is_staff:
         raise HTTPException(
             status_code=403,
             detail="You do not have permission to access this user",
@@ -114,11 +110,12 @@ async def read_user(
 async def update_current_user(
     user_update: UserUpdateMe,
     session: AsyncSession = Depends(get_session),
-    token=Depends(active_token),
+    token_user: TokenUser = Depends(active_user_token),
 ):
-    user = await update_user(token.sub, user_update, session)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+    user_service = UserService(session=session)
+    user = await user_service.update_by_id(
+        token_user.id, user_update.model_dump(exclude_unset=True)
+    )
     return user
 
 
@@ -126,37 +123,42 @@ async def update_current_user(
 # PATCH /users/{user_id}
 # Staff
 # ------------------------------------------
-
-
 @router.patch("/{user_id}", response_model=UserRead)
 async def update_existing_user(
     user_id: ULID,
     user_update: UserUpdate,
     session: AsyncSession = Depends(get_session),
-    token=Depends(staff_token),
+    token_user: TokenUser = Depends(staff_user_token),
 ):
-    if not token.is_staff:
+    if not token_user.is_staff:
         raise HTTPException(
             status_code=403,
             detail="Permission Denied",
         )
 
-    user = await update_user(user_id, user_update, session)
+    user_service = UserService(session=session)
+    user = await user_service.update_by_id(
+        str(user_id), user_update.model_dump(exclude_unset=True)
+    )
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-
     return user
 
 
 @router.delete("/me")
 async def delete_own_account(
-    token=Depends(active_token),
+    token_user: TokenUser = Depends(active_user_token),
     session: AsyncSession = Depends(get_session),
 ):
-    user = await get_user_by_id(token.user_id, session)
+    user_service = UserService(session=session)
+    user = await user_service.get_by_id(token_user.id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-
+    if user.is_staff:
+        raise HTTPException(
+            status_code=403,
+            detail="Staff accounts cannot be deleted",
+        )
     # Soft delete
     user.is_deleted = True
     session.add(user)
@@ -172,14 +174,16 @@ async def delete_own_account(
 async def delete_existing_user(
     user_id: ULID,
     session: AsyncSession = Depends(get_session),
-    token=Depends(admin_token),
+    token_user: TokenUser = Depends(admin_user_token),
 ):
-    if not token.is_admin and user_id != token.user_id:
+    # Only Staff or Admin can delete users
+    if not token_user.is_admin and user_id != token_user.user_id:
         raise HTTPException(
             status_code=403,
             detail="Permission Denied",
         )
-    success = await delete_user(user_id, session)
-    if not success:
+    user_service = UserService(session=session)
+    user = await user_service.delete_by_id(str(user_id))
+    if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return {"detail": "User deleted successfully"}
