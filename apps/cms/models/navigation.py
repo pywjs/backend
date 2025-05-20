@@ -1,23 +1,19 @@
 # apps/cms/models/navigation.py
 from typing import Optional
 
-from sqlmodel import SQLModel, Field, Relationship
-from ulid import ULID
+from sqlmodel import Field, Relationship
+from core.models import BaseTable, SlugMixin
 
 
-class Navigation(SQLModel, table=True):
-    id: str | None = Field(default_factory=lambda: str(ULID()), primary_key=True)
+class Navigation(BaseTable, SlugMixin, table=True):
     name: str  # e.g. "main", "footer", "sidebar"
-    slug: str = Field(unique=True)  # e.g. "main-navigation"
     is_active: bool = True  # Is this navigation active?
 
     items: list["NavigationItem"] = Relationship(back_populates="navigation")
 
 
-class NavigationItem(SQLModel, table=True):
-    id: str | None = Field(default_factory=lambda: str(ULID()), primary_key=True)
+class NavigationItem(BaseTable, SlugMixin, table=True):
     title: str
-    slug: str
     order: int = 0
     is_visible: bool = True
     is_external: bool = False
