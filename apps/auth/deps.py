@@ -33,7 +33,7 @@ async def _get_token_data(token: str = Depends(oauth2_scheme)) -> TokenUser:
 async def active_user_token(
     token_user: TokenUser = Depends(_get_token_data),
 ) -> TokenUser:
-    """Check if the user is active."""
+    """Check if the user is active and also user is not deleted"""
     if not token_user.is_active:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -76,7 +76,7 @@ async def admin_user_token(
 async def get_user_or_401(user_id: str, session: AsyncSession) -> User:
     """Get user from DB or raise 401."""
     user_db = await session.get(User, user_id)
-    if not user_db:
+    if not user_db or user_db.is_deleted:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found",
