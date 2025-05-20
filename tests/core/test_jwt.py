@@ -1,6 +1,8 @@
 # tests/core/test_jwt.py
 import pytest
-from core.security.jwt import JWT, TokenUser, TokenPair
+from core.security.jwt import JWT, TokenUser, TokenPair, JWTTokenPayload
+from utils.time import current_time
+from core.security.exceptions import ExpiredTokenException
 
 
 @pytest.fixture
@@ -60,3 +62,25 @@ def test_refresh_token_is_minimal(jwt, token_user):
     # Ensure only minimal fields are present
     allowed_keys = ["sub", "iat", "exp", "token_type", "id"]
     assert all(key in allowed_keys for key in payload.keys())
+
+
+def test_invalid_token_type_rejected(jwt, token_user):
+    # Test that the verify method rejects invalid token types
+    access_token = jwt.access_token(token_user)
+    # verify the access_token as refresh token [should fail]
+    assert jwt.verify(access_token, token_type="refresh") is False
+
+
+def test_expired_token_is_invalid(jwt, token_user):
+    from datetime import timedelta
+
+    past = current_time() - timedelta(days=1)
+    payload = {
+        "sub": token_user.id,
+        "iat": past,
+        "exp": past + timedelta(minutes=1),
+        "token_type": "access",
+    }
+    token = jwt._encode_jwt(JWTTokenPayload.model_construct(**payload))
+    with pytest.raises(ExpiredTokenException):
+        jwt.verify(token, token_type="access")

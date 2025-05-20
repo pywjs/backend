@@ -3,6 +3,7 @@ import jwt as _jwt
 from typing import Literal, Any
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime, UTC, timedelta
+from .exceptions import InvalidTokenException, ExpiredTokenException
 
 
 class TokenUser(BaseModel):
@@ -115,9 +116,9 @@ class JWT:
             payload = _jwt.decode(token, self.secret, algorithms=[self.algorithm])
             return payload
         except _jwt.ExpiredSignatureError:
-            raise ValueError("Token has expired")
+            raise ExpiredTokenException
         except _jwt.InvalidTokenError:
-            raise ValueError("Invalid token")
+            raise InvalidTokenException
 
     def _create_jwt_token(self, data: dict[str, Any], expire_delta: timedelta) -> str:
         sub = data.get("id")
