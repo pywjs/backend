@@ -99,6 +99,9 @@ async def authenticate_user(
 
 
 class UserService(BaseService):
+    def __init__(self, session: AsyncSession):
+        super().__init__(model=User, session=session)
+
     async def get_user_by_email(self, email: EmailStr) -> User | None:
         # We accept EmailStr so we want to verify it from the input, but the database requires a string.
         email_in_db = str(email)

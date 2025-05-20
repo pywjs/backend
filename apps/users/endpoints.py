@@ -10,9 +10,9 @@ from apps.users.schemas import UserRead, UserCreate, UserUpdate, UserUpdateMe
 from core.database import AsyncSession, get_session
 from apps.users.services import (
     get_user_by_id,
-    list_users,
     update_user,
     delete_user,
+    UserService,
 )
 from utils.email import send_verification_email
 
@@ -57,8 +57,8 @@ async def read_users(
     session: AsyncSession = Depends(get_session),
     _=Depends(staff_user_token),
 ):
-    users = await list_users(session)
-    return users
+    user_service = UserService(session=session)
+    return await user_service.get_all()
 
 
 # ------------------------------------------
