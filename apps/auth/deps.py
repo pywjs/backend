@@ -11,6 +11,13 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 
 
+"""
+FastAPI dependencies for authentication and authorization.
+They can utilize services, but they are not services themselves,
+and they can return HTTPExceptions.
+"""
+
+
 # ------------------------------------------
 # Token Based Dependencies
 # Only checks the token and the claims
@@ -57,7 +64,7 @@ async def staff_user_token(
     if not token_user.is_staff:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Permission denied, PRIVILEGES[S*] REQUIRED",
+            detail="Permission denied, PRIVILEGES[S*] required",
         )
     return token_user
 
@@ -69,7 +76,7 @@ async def admin_user_token(
     if not token_user.is_admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Permission denied, PRIVILEGES[A*] REQUIRED",
+            detail="Permission denied, PRIVILEGES[A*] required",
         )
     return token_user
 
@@ -77,7 +84,7 @@ async def admin_user_token(
 # ------------------------------------------
 # Token + User in DB Helpers
 # Cheks the user both in the token and in the DB
-# Those are not dependencies. They mean to be used in the endpoints, and called directly
+# Those are not dependencies. They mean to be used in the endpoints and called directly
 #  to separate the services from the database layer.
 # ------------------------------------------
 

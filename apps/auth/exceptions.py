@@ -1,5 +1,4 @@
 # apps/auth/exceptions.py
-from core.exceptions import BaseAppException
 
 
 class BaseAuthException(Exception):
@@ -20,25 +19,25 @@ class UserNotFoundException(BaseAuthException):
     pass
 
 
-class UserNotActiveException(BaseAppException):
+class UserNotActiveException(BaseAuthException):
     """Exception raised when a user is not active."""
 
     pass
 
 
-class UserNotVerifiedException(BaseAppException):
+class UserNotVerifiedException(BaseAuthException):
     """Exception raised when a user is not verified."""
 
     pass
 
 
-class UserAlreadyExistsException(BaseAppException):
+class UserAlreadyExistsException(BaseAuthException):
     """Exception raised when a user already exists."""
 
     pass
 
 
-class UserIsDeletedException(BaseAppException):
+class UserIsDeletedException(BaseAuthException):
     """Exception raised when a user is deleted."""
 
     pass
