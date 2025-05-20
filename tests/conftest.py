@@ -5,7 +5,8 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from typing import AsyncGenerator
 
-from core.security import get_pwd_hasher
+from core.security import get_pwd_hasher, get_jwt
+from core.security.jwt import TokenUser
 from main import app
 from core.database import get_session
 from sqlmodel import SQLModel
@@ -134,6 +135,7 @@ async def create_test_user(setup_database, client: AsyncClient) -> User | None:
 
 @pytest.fixture
 async def create_inactive_user(create_test_user: User) -> User | None:
+    create_test_user.email = "inactive@example.com"  # type: ignore
     create_test_user.is_active = False
     await save_user_to_db(create_test_user)
     return create_test_user
@@ -141,6 +143,7 @@ async def create_inactive_user(create_test_user: User) -> User | None:
 
 @pytest.fixture
 async def create_deleted_user(create_test_user: User) -> User | None:
+    create_test_user.email = "deleted@example.com"  # type: ignore
     create_test_user.is_deleted = True
     await save_user_to_db(create_test_user)
     return create_test_user
@@ -148,6 +151,7 @@ async def create_deleted_user(create_test_user: User) -> User | None:
 
 @pytest.fixture
 async def create_staff_user(create_test_user: User) -> User | None:
+    create_test_user.email = "staff@example.com"  # type: ignore
     create_test_user.is_staff = True
     await save_user_to_db(create_test_user)
     return create_test_user
@@ -155,9 +159,17 @@ async def create_staff_user(create_test_user: User) -> User | None:
 
 @pytest.fixture
 async def create_admin_user(create_test_user: User) -> User | None:
+    create_test_user.email = "admin@example.com"  # type: ignore
     create_test_user.is_admin = True
     await save_user_to_db(create_test_user)
     return create_test_user
+
+
+async def save_to_db(instance: SQLModel) -> None:
+    async for session in override_get_session():
+        session.add(instance)
+        await session.commit()
+        await session.refresh(instance)
 
 
 async def save_user_to_db(user: User) -> None:
@@ -165,3 +177,24 @@ async def save_user_to_db(user: User) -> None:
         session.add(user)
         await session.commit()
         await session.refresh(user)
+
+
+# ----------------------------------
+# Token
+# ----------------------------------
+@pytest.fixture
+async def get_token_for_user() -> callable:
+    jwt = get_jwt()
+
+    async def _token(user: User) -> str:
+        token_user = TokenUser(
+            id=user.id,
+            email=str(user.email),
+            is_active=user.is_active,
+            is_staff=user.is_staff,
+            is_admin=user.is_admin,
+            is_verified=user.is_verified,
+        )
+        return jwt.token_pair(token_user).access
+
+    return _token
