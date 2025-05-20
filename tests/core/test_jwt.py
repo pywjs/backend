@@ -24,6 +24,18 @@ def token_user():
     )
 
 
+@pytest.fixture
+def staff_token_user():
+    return TokenUser(
+        id="01JVPDJAHW6SCX3T93X85EP4A2",
+        email="staff@example.com",
+        is_verified=True,
+        is_active=True,
+        is_staff=True,
+        is_admin=False,
+    )
+
+
 def test_token_pair(jwt, token_user):
     # Test that the token pair is created correctly
     token_pair = jwt.token_pair(token_user)
@@ -84,3 +96,20 @@ def test_expired_token_is_invalid(jwt, token_user):
     token = jwt._encode_jwt(JWTTokenPayload.model_construct(**payload))
     with pytest.raises(ExpiredTokenException):
         jwt.verify(token, token_type="access")
+
+
+def test_staff_is_not_admin(jwt, staff_token_user):
+    token_pair = jwt.token_pair(staff_token_user)
+    assert isinstance(token_pair, TokenPair)
+    assert token_pair.access_token is not None
+    assert token_pair.refresh_token is not None
+    # Test that the access token is valid
+    assert jwt.verify(token_pair.access_token, token_type="access") is True
+    # Test that access token contains the correct payload
+    token_data = jwt.token_data(token_pair.access_token)
+    assert token_data is not None
+    assert token_data.sub == staff_token_user.id
+    assert token_data.email == staff_token_user.email
+    assert token_data.is_verified == staff_token_user.is_verified
+    # Test that staff is not admin
+    assert token_data.is_admin is False
