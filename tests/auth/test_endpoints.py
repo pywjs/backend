@@ -148,7 +148,7 @@ class TestRefresh:
         assert "access_token" in response.json()
         assert "refresh_token" in response.json()
 
-    # Test refresh with invalid refresh token
+    # Test refresh with invalid refresh token *using access token*
     @pytest.mark.anyio
     async def test_refresh_invalid_token(
         self, client: AsyncClient, create_test_user, get_token_pair_for_user
