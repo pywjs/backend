@@ -58,10 +58,10 @@ async def login(payload: LoginRequest, session: AsyncSession = Depends(get_sessi
 
 @router.post("/refresh", response_model=TokenPair)
 async def refresh_tokens(
-    grant_type: str = Form(...),
+    grant_type: str = Form(default="refresh_token"),
     refresh_token: str = Form(...),
-    client_id: str | None = Form(None),  # noqa
-    client_secret: str | None = Form(None),  # noqa
+    client_id: str | None = Form(default=""),  # noqa
+    client_secret: str | None = Form(default=""),  # noqa
     session: AsyncSession = Depends(get_session),
 ):
     if grant_type and grant_type != "refresh_token":
