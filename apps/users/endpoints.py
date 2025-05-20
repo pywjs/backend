@@ -3,11 +3,17 @@ from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from ulid import ULID
-
+from sqlmodel.ext.asyncio.session import AsyncSession
 from apps.auth.services import AuthService
-from apps.auth.deps import staff_user_token, active_user_token, admin_user_token
+from apps.auth.deps import (
+    staff_user_token,
+    active_user_token,
+    admin_user_token,
+    active_user,
+)
+from apps.users.models import User
 from apps.users.schemas import UserRead, UserCreate, UserUpdate, UserUpdateMe
-from core.database import AsyncSession, get_session
+from core.database import get_session
 from apps.users.services import (
     get_user_by_id,
     update_user,
@@ -90,15 +96,14 @@ async def read_current_user(
 async def read_user(
     user_id: ULID,
     session: AsyncSession = Depends(get_session),
-    token=Depends(active_user_token),
+    token_user: TokenUser = Depends(active_user_token),
 ):
-    # Get DB Resource
-    user = await get_user_by_id(user_id, session)
+    user: User = await active_user(session, token_user)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
     # Check Access
-    if not (token.is_staff or user_id == token.user_id):
+    if user.id != user_id and not user.is_staff:
         raise HTTPException(
             status_code=403,
             detail="You do not have permission to access this user",

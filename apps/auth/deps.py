@@ -86,22 +86,16 @@ async def get_user_or_401(user_id: str, session: AsyncSession) -> User:
     return user_db
 
 
-async def active_user(
-    session: AsyncSession, token_user: TokenUser = Depends(active_user_token)
-) -> User:
+async def active_user(session: AsyncSession, token_user: TokenUser) -> User:
     """Check if the user is active."""
     return await get_user_or_401(token_user.id, session)
 
 
-async def staff_user(
-    session: AsyncSession, token_user: TokenUser = Depends(staff_user_token)
-) -> User:
+async def staff_user(session: AsyncSession, token_user: TokenUser) -> User:
     """Check if the user is staff."""
     return await get_user_or_401(token_user.id, session)
 
 
-async def admin_user(
-    session: AsyncSession, token_user: TokenUser = Depends(admin_user_token)
-) -> User:
+async def admin_user(session: AsyncSession, token_user: TokenUser) -> User:
     """Check if the user is admin."""
     return await get_user_or_401(token_user.id, session)
