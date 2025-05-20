@@ -4,6 +4,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from core.security import get_jwt
 from apps.users.models import User
+from core.security.exceptions import ExpiredTokenException
 from core.security.jwt import TokenUser
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -22,6 +23,12 @@ async def _get_token_data(token: str = Depends(oauth2_scheme)) -> TokenUser:
         _jwt = get_jwt()
         token_user = _jwt.token_data(token)
         return token_user
+    except ExpiredTokenException:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has expired",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

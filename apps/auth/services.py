@@ -14,7 +14,7 @@ class AuthService:
         self.jwt = get_jwt()
         self.pwd_hasher = get_pwd_hasher()
         self.session = session
-        self.user_service = UserService(model=User, session=self.session)
+        self.user_service = UserService(session=self.session)
 
     async def authenticate(self, email: EmailStr, password: str) -> User | None:
         """Authenticate user by email and password."""
@@ -48,7 +48,16 @@ class AuthService:
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Invalid refresh token.",
                 )
-            token_user = self.jwt.token_data(token=refresh_token)
+            token_data = self.jwt.token_data(token=refresh_token)
+            user = await self.user_service.get_by_id(token_data.id)
+            token_user = TokenUser(
+                id=user.id,
+                email=str(user.email),
+                is_active=user.is_active,
+                is_staff=user.is_staff,
+                is_verified=user.is_verified,
+                is_admin=user.is_admin,
+            )
             return self.jwt.token_pair(token_user)
         except ValueError:
             raise HTTPException(

@@ -1,11 +1,11 @@
 # apps/auth/endpoints.py
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Form
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import EmailStr, BaseModel
 
-from apps.auth.schemas import LoginRequest, RefreshTokenRequest
+from apps.auth.schemas import LoginRequest
 from core.security.jwt import TokenPair
 from apps.auth.services import AuthService
 from core.database import AsyncSession, get_session
@@ -57,11 +57,20 @@ async def login(payload: LoginRequest, session: AsyncSession = Depends(get_sessi
 
 
 @router.post("/refresh", response_model=TokenPair)
-async def refresh_token(
-    payload: RefreshTokenRequest, session: AsyncSession = Depends(get_session)
+async def refresh_tokens(
+    grant_type: str = Form(...),
+    refresh_token: str = Form(...),
+    client_id: str | None = Form(None),  # noqa
+    client_secret: str | None = Form(None),  # noqa
+    session: AsyncSession = Depends(get_session),
 ):
+    if grant_type and grant_type != "refresh_token":
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid grant_type. Only 'refresh_token' is supported.",
+        )
     auth_service = AuthService(session=session)
-    return await auth_service.refresh(payload.refresh_token)
+    return await auth_service.refresh(refresh_token)
 
 
 # ------------------------------------------
@@ -76,7 +85,6 @@ class MessageResponse(BaseModel):
 
 @router.get("/verify", response_model=MessageResponse)
 async def verify_email(token: str, session: AsyncSession = Depends(get_session)):
-    print(token)
     auth_service = AuthService(session=session)
     if not auth_service.jwt.verify(token, token_type="verification"):
         raise HTTPException(status_code=401, detail="Invalid verification token")

@@ -120,11 +120,12 @@ async def read_user(
 async def update_current_user(
     user_update: UserUpdateMe,
     session: AsyncSession = Depends(get_session),
-    token=Depends(active_user_token),
+    token_user: TokenUser = Depends(active_user_token),
 ):
-    user = await update_user(token.sub, user_update, session)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+    user_service = UserService(session=session)
+    user = await user_service.update_by_id(
+        user_update.id, user_update.model_dump(exclude_unset=True)
+    )
     return user
 
 
