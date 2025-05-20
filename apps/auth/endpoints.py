@@ -41,8 +41,8 @@ async def login_token(
 @router.post("/login", response_model=TokenPair)
 async def login(payload: LoginRequest, session: AsyncSession = Depends(get_session)):
     """
-    Login user with email and password to get access & refresh tokens.
-    :param credentials: LoginRequest(email, password)
+    Login user with email and password to get access and refresh tokens.
+    :param payload: (LoginRequest)
     :param session: AsyncSession
     :return: TokenPair(access_token, refresh_token)
     """
