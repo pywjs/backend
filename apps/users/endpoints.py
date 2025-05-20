@@ -14,6 +14,7 @@ from apps.users.services import (
     delete_user,
     UserService,
 )
+from core.security.jwt import TokenUser
 from utils.email import send_verification_email
 
 router = APIRouter()
@@ -69,10 +70,11 @@ async def read_users(
 
 @router.get("/me", response_model=UserRead)
 async def read_current_user(
-    token=Depends(active_user_token),
+    token: TokenUser = Depends(active_user_token),
     session: AsyncSession = Depends(get_session),
 ):
-    user = await get_user_by_id(token.sub, session)
+    user_service = UserService(session=session)
+    user = await user_service.get_by_id(token.id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
