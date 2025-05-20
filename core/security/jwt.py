@@ -3,7 +3,10 @@ import jwt as _jwt
 from typing import Literal, Any
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime, UTC, timedelta
+
+
 from .exceptions import InvalidTokenException, ExpiredTokenException
+from utils.time import current_time
 
 
 class TokenUser(BaseModel):
@@ -36,10 +39,15 @@ class VerificationToken(BaseModel):
 class JWTTokenPayload(BaseModel):
     """A JWT token payload, requires minimum fields to be valid."""
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(
+        extra="allow",
+        json_encoders={
+            datetime: lambda v: v.astimezone(UTC).isoformat(),
+        },
+    )
     sub: str
-    iat: datetime | int
-    exp: datetime | int
+    iat: int | datetime
+    exp: int | datetime
 
 
 class JWT:
@@ -109,7 +117,9 @@ class JWT:
             return False
 
     def _encode_jwt(self, payload: JWTTokenPayload) -> str:
-        return _jwt.encode(payload.model_dump(), self.secret, algorithm=self.algorithm)
+        return _jwt.encode(
+            payload.model_dump(mode="json"), self.secret, algorithm=self.algorithm
+        )
 
     def _decode_jwt(self, token: str) -> dict[str, Any]:
         try:
@@ -121,9 +131,10 @@ class JWT:
             raise InvalidTokenException
 
     def _create_jwt_token(self, data: dict[str, Any], expire_delta: timedelta) -> str:
+        now = current_time()
+        iat = now.isoformat()
+        exp = (now + expire_delta).isoformat()
         sub = data.get("id")
-        iat = datetime.now(UTC)
-        exp = iat + expire_delta
         payload = JWTTokenPayload.model_construct(sub=sub, iat=iat, exp=exp, **data)
         return self._encode_jwt(payload)
 

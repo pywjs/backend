@@ -3,12 +3,12 @@ from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from ulid import ULID
-from core.security import get_jwt
+
+from apps.auth.services import AuthService
 from apps.auth.deps import staff_user_token, active_user_token, admin_user_token
 from apps.users.schemas import UserRead, UserCreate, UserUpdate, UserUpdateMe
 from core.database import AsyncSession, get_session
 from apps.users.services import (
-    create_user,
     get_user_by_id,
     list_users,
     update_user,
@@ -30,13 +30,13 @@ async def create_new_user(
     session: AsyncSession = Depends(get_session),
 ):
     try:
-        jwt = get_jwt()
-        new_user = await create_user(user, session)
-        token = jwt.create_verification_token(str(new_user.id))
+        auth_service = AuthService(session=session)
+        new_user = await auth_service.user_service.create_user(user)
+        varification_token = auth_service.jwt.verification_token(new_user)
         background_tasks.add_task(
             send_verification_email,
             str(new_user.email),
-            token,
+            varification_token,
         )
     except ValueError as e:
         raise HTTPException(
