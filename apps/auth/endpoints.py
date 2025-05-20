@@ -5,6 +5,12 @@ from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import EmailStr, BaseModel
 
+from apps.auth.exceptions import (
+    UserNotFoundException,
+    InvalidCredentialsException,
+    UserIsDeletedException,
+    UserNotActiveException,
+)
 from apps.auth.schemas import LoginRequest
 from core.security.jwt import TokenPair
 from apps.auth.services import AuthService
@@ -27,7 +33,20 @@ async def login_token(
     email: EmailStr = form_data.username  # type: ignore
     password = form_data.password
     auth_service = AuthService(session=session)
-    return await auth_service.login(email, password)
+    try:
+        await auth_service.login(email, password)
+    except (UserNotFoundException, InvalidCredentialsException, UserIsDeletedException):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except UserNotActiveException:
+        raise HTTPException(
+            status_code=403,
+            detail="Account is not active",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
 
 # ------------------------------------------
