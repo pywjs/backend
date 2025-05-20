@@ -44,5 +44,7 @@ class UserIsDeletedException(BaseAppException):
     pass
 
 
-class AuthErrorCode:
+class InvalidRefreshTokenException(BaseAuthException):
+    """Exception raised when refresh token is invalid."""
+
     pass

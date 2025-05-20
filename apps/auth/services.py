@@ -1,6 +1,5 @@
 # apps/auth/services.py
 
-from fastapi import HTTPException, status
 from pydantic import EmailStr
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -9,6 +8,7 @@ from apps.auth.exceptions import (
     UserNotFoundException,
     UserNotActiveException,
     InvalidCredentialsException,
+    InvalidRefreshTokenException,
 )
 from apps.users.models import User
 from apps.users.services import UserService
@@ -57,10 +57,7 @@ class AuthService:
         try:
             is_valid = self.jwt.verify(token=refresh_token, token_type="refresh")
             if not is_valid:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Invalid refresh token.",
-                )
+                raise InvalidRefreshTokenException
             token_data = self.jwt.token_data(token=refresh_token)
             user = await self.user_service.get_by_id(token_data.id)
             token_user = TokenUser(
@@ -73,7 +70,4 @@ class AuthService:
             )
             return self.jwt.token_pair(token_user)
         except ValueError:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid refresh token.",
-            )
+            raise InvalidRefreshTokenException
