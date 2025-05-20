@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from typing import AsyncGenerator
 
 from core.security import get_pwd_hasher, get_jwt
-from core.security.jwt import TokenUser
+from core.security.jwt import TokenUser, TokenPair
 from main import app
 from core.database import get_session
 from sqlmodel import SQLModel
@@ -183,10 +183,10 @@ async def save_user_to_db(user: User) -> None:
 # Token
 # ----------------------------------
 @pytest.fixture
-async def get_token_for_user() -> callable:
+async def get_token_pair_for_user() -> callable:
     jwt = get_jwt()
 
-    async def _token(user: User) -> str:
+    async def _token_pair(user: User) -> TokenPair:
         token_user = TokenUser(
             id=user.id,
             email=str(user.email),
@@ -195,6 +195,6 @@ async def get_token_for_user() -> callable:
             is_admin=user.is_admin,
             is_verified=user.is_verified,
         )
-        return jwt.token_pair(token_user).access
+        return jwt.token_pair(token_user)
 
-    return _token
+    return _token_pair

@@ -10,6 +10,7 @@ from apps.auth.exceptions import (
     InvalidCredentialsException,
     UserIsDeletedException,
     UserNotActiveException,
+    InvalidRefreshTokenException,
 )
 from apps.auth.schemas import LoginRequest
 from core.security.jwt import TokenPair
@@ -90,7 +91,10 @@ async def refresh_tokens(
             detail="Invalid grant_type. Only 'refresh_token' is supported.",
         )
     auth_service = AuthService(session=session)
-    return await auth_service.refresh(refresh_token)
+    try:
+        return await auth_service.refresh(refresh_token)
+    except InvalidRefreshTokenException:
+        raise HTTPException(status_code=401, detail="Invalid refresh token or expired")
 
 
 # ------------------------------------------

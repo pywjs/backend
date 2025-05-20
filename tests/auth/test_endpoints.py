@@ -127,3 +127,37 @@ class TestLogin:
         response = await client.post("/auth/login", json=data)
         assert response.status_code == 401
         assert response.json()["detail"] == "Invalid credentials"
+
+
+# ---------------------------------------------
+# Test auth/refresh endpoint
+# ---------------------------------------------
+class TestRefresh:
+    # Test refresh with valid refresh token
+    @pytest.mark.anyio
+    async def test_refresh_success(
+        self, client: AsyncClient, create_test_user, get_token_pair_for_user
+    ):
+        token_pair = await get_token_pair_for_user(create_test_user)
+        form_data = {
+            "grant_type": "refresh_token",
+            "refresh_token": token_pair.refresh_token,
+        }
+        response = await client.post("/auth/refresh", data=form_data)
+        assert response.status_code == 200
+        assert "access_token" in response.json()
+        assert "refresh_token" in response.json()
+
+    # Test refresh with invalid refresh token
+    @pytest.mark.anyio
+    async def test_refresh_invalid_token(
+        self, client: AsyncClient, create_test_user, get_token_pair_for_user
+    ):
+        token_pair = await get_token_pair_for_user(create_test_user)
+        form_data = {
+            "grant_type": "refresh_token",
+            "refresh_token": token_pair.access_token,  # Use access token instead of refresh token
+        }
+        response = await client.post("/auth/refresh", data=form_data)
+        assert response.status_code == 401
+        assert "Invalid refresh token" in response.json()["detail"]
