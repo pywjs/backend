@@ -112,8 +112,6 @@ def mock_send_verification_email(monkeypatch):
 # ----------------------------------
 # Users
 # ----------------------------------
-
-
 @pytest.fixture
 async def create_test_user(setup_database, client: AsyncClient) -> User | None:
     async for session in override_get_session():
@@ -132,6 +130,34 @@ async def create_test_user(setup_database, client: AsyncClient) -> User | None:
         await session.refresh(user)
         return user
     return None
+
+
+@pytest.fixture
+async def create_inactive_user(create_test_user: User) -> User | None:
+    create_test_user.is_active = False
+    await save_user_to_db(create_test_user)
+    return create_test_user
+
+
+@pytest.fixture
+async def create_deleted_user(create_test_user: User) -> User | None:
+    create_test_user.is_deleted = True
+    await save_user_to_db(create_test_user)
+    return create_test_user
+
+
+@pytest.fixture
+async def create_staff_user(create_test_user: User) -> User | None:
+    create_test_user.is_staff = True
+    await save_user_to_db(create_test_user)
+    return create_test_user
+
+
+@pytest.fixture
+async def create_admin_user(create_test_user: User) -> User | None:
+    create_test_user.is_admin = True
+    await save_user_to_db(create_test_user)
+    return create_test_user
 
 
 async def save_user_to_db(user: User) -> None:
