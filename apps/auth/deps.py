@@ -68,7 +68,7 @@ async def admin_user_token(
 
 
 # ------------------------------------------
-# Token + User in DB Dependencies
+# Token + User in DB Helpers
 # Cheks the user both in the token and in the DB
 # ------------------------------------------
 
