@@ -12,13 +12,12 @@ from core.database import AsyncSession, get_session
 
 router = APIRouter()
 
+
 # ------------------------------------------
 # POST /auth/token
 # OAuth 2.0 Password Flow
 # Use Form(...) / application/x-www-form-urlencoded
 # ------------------------------------------
-
-
 @router.post("/token", response_model=TokenPair)
 async def login_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
@@ -36,8 +35,6 @@ async def login_token(
 # OAuth 2.0 Password Flow
 # Use JSON / application/json
 # ------------------------------------------
-
-
 @router.post("/login", response_model=TokenPair)
 async def login(payload: LoginRequest, session: AsyncSession = Depends(get_session)):
     """
@@ -53,9 +50,8 @@ async def login(payload: LoginRequest, session: AsyncSession = Depends(get_sessi
 # ------------------------------------------
 # POST /auth/refresh
 # Refresh access token using refresh token
+# Use Form(...) / application/x-www-form-urlencoded
 # ------------------------------------------
-
-
 @router.post("/refresh", response_model=TokenPair)
 async def refresh_tokens(
     grant_type: str = Form(default="refresh_token"),
@@ -77,8 +73,6 @@ async def refresh_tokens(
 # POST /auth/verify
 # Verify email using verification token
 # ------------------------------------------
-
-
 class MessageResponse(BaseModel):
     message: str
 
