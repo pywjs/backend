@@ -47,10 +47,12 @@ class TimestampRequest(RequestSchema):
     updated_at: datetime | None = Field(default=None)
 
 
-class PublishableRequest(RequestSchema):
-    # Fields like: published_at, unpublished_at, etc. should not be updated from the request.
-    # Instead, they should be set by the server when creating or updating the record.
-    is_published: bool | None = False
+class PublishableCreateRequest(RequestSchema):
+    is_published: bool = False
+
+
+class PublishableUpdateRequest(RequestSchema):
+    is_published: bool | None = None
 
 
 class PublishableResponse(ResponseSchema):
@@ -62,7 +64,15 @@ class PublishableResponse(ResponseSchema):
 class SlugRequest(RequestSchema):
     # This schema is here just for consistency.
     # In general case, we want to generate the slug from the title or other fields programmatically.
+    slug: str | None = None
+
+
+class SlugCreateRequest(RequestSchema):
     slug: str
+
+
+class SlugUpdateRequest(RequestSchema):
+    slug: str | None = None
 
 
 class SlugResponse(ResponseSchema):

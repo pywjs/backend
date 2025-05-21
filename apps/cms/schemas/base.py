@@ -1,45 +1,72 @@
 # apps/cms/schemas/base.py
-from datetime import datetime
 from typing import Literal
 
 from sqlmodel import Field
-from pydantic import HttpUrl, field_serializer
-from core.schemas import RequestSchema, ResponseSchema, SlugRequest, PublishableRequest
+from pydantic import HttpUrl, field_serializer, BaseModel
+
+from core.schemas import (
+    SlugCreateRequest,
+    RequestSchema,
+    SlugUpdateRequest,
+    SlugResponse,
+    ULIDPrimaryKeyResponse,
+    TimestampResponse,
+    PublishableCreateRequest,
+    PublishableUpdateRequest,
+    PublishableResponse,
+    ResponseSchema,
+)
+from utils.text import slugify
 
 
-class BaseContentSchema(RequestSchema):
-    # For create requests
-    title: str
+class BaseContentOptionalsSchema(BaseModel):
+    """Fields that are optional for create/update fields."""
+
     body_json: dict | None = None
     body_html: str | None = None
     body_markdown: str | None = None
     body_field: Literal["json", "html", "markdown"] = "json"
-    # SlugMixin
-    slug: str
-    # PublishableMixin
-    is_published: bool = False
-    published_at: datetime | None = None
 
 
-class BaseContentRequest(SlugRequest, PublishableRequest, RequestSchema):
+class BaseContentCreateSchema(
+    BaseContentOptionalsSchema,
+    SlugCreateRequest,
+    PublishableCreateRequest,
+    RequestSchema,
+):
     title: str
-    body_json: dict | None = None
-    body_html: str | None = None
-    body_markdown: str | None = None
-    body_field: Literal["json", "html", "markdown"] = "json"
+
+    @field_serializer("slug")
+    def serialize_slug(self, v: str) -> str:
+        return slugify(v) if v else v
 
 
-class BaseContentUpdateSchema(RequestSchema):
-    # For update requests
+class BaseContentUpdateSchema(
+    BaseContentOptionalsSchema,
+    SlugUpdateRequest,
+    PublishableUpdateRequest,
+    RequestSchema,
+):
     title: str | None = None
+
+    @field_serializer("slug")
+    def serialize_slug(self, v: str) -> str:
+        return slugify(v) if v else v
+
+
+class BaseContentResponse(
+    BaseContentOptionalsSchema,
+    ULIDPrimaryKeyResponse,
+    SlugResponse,
+    PublishableResponse,
+    TimestampResponse,
+    ResponseSchema,
+):
+    title: str
     body_json: dict | None = None
     body_html: str | None = None
     body_markdown: str | None = None
-    body_field: Literal["json", "html", "markdown"] | None = None
-    # SlugMixin
-    slug: str | None = None
-    # PublishableMixin
-    is_published: bool | None = None
+    body_field: Literal["json", "html", "markdown"] = "json"
 
 
 class BaseMetadataSchema(RequestSchema):
@@ -61,9 +88,3 @@ class BaseMetadataSchema(RequestSchema):
         if isinstance(v, HttpUrl):
             return str(v)
         return v
-
-
-class BaseTimestampSchema(ResponseSchema):
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
-    published_at: datetime | None = None
