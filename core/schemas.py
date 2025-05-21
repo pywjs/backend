@@ -24,19 +24,10 @@ class RequestSchema(_BaseSchema):
 
 # <- Base for output/response schemas
 class ResponseSchema(_BaseSchema):
-    """Base schema for response data.
-    Sets the `from_attributes` config to True, so that the model will be created from attributes
-    """
-
     model_config = ConfigDict(from_attributes=True)
 
 
 class ULIDPrimaryKeyRequest(RequestSchema):
-    """Mixin for request schemas with ULID primary keys.
-    Fields:
-        - id: ULID primary key
-    """
-
     id: ULID
 
 
@@ -64,3 +55,11 @@ class PublishableResponse(ResponseSchema):
     is_published: bool | None = False
     published_at: datetime | None = None
     unpublished_at: datetime | None = None
+
+
+class SlugRequest(RequestSchema):
+    slug: str
+
+
+class SlugResponse(ResponseSchema):
+    slug: str
