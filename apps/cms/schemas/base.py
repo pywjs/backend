@@ -19,7 +19,7 @@ from core.schemas import (
 from utils.text import slugify
 
 
-class BaseContentOptionalsSchema(BaseModel):
+class BaseContentOptionals(BaseModel):
     """Fields that are optional for create/update fields."""
 
     body_json: dict | None = None
@@ -29,7 +29,7 @@ class BaseContentOptionalsSchema(BaseModel):
 
 
 class BaseContentCreateSchema(
-    BaseContentOptionalsSchema,
+    BaseContentOptionals,
     SlugCreateRequest,
     PublishableCreateRequest,
     RequestSchema,
@@ -42,7 +42,7 @@ class BaseContentCreateSchema(
 
 
 class BaseContentUpdateSchema(
-    BaseContentOptionalsSchema,
+    BaseContentOptionals,
     SlugUpdateRequest,
     PublishableUpdateRequest,
     RequestSchema,
@@ -54,8 +54,8 @@ class BaseContentUpdateSchema(
         return slugify(v) if v else v
 
 
-class BaseContentResponse(
-    BaseContentOptionalsSchema,
+class BaseContentResponseSchema(
+    BaseContentOptionals,
     ULIDPrimaryKeyResponse,
     SlugResponse,
     PublishableResponse,
@@ -63,13 +63,9 @@ class BaseContentResponse(
     ResponseSchema,
 ):
     title: str
-    body_json: dict | None = None
-    body_html: str | None = None
-    body_markdown: str | None = None
-    body_field: Literal["json", "html", "markdown"] = "json"
 
 
-class BaseMetadataSchema(RequestSchema):
+class BaseMetadataOptionals(BaseModel):
     # Create/Update requests
     # SEO fields
     meta_title: str | None = None
@@ -83,8 +79,16 @@ class BaseMetadataSchema(RequestSchema):
     og_type: str | None = Field(default="website")
     structured_data: dict | None = None
 
+
+class BaseMetadataRequestSchema(BaseMetadataOptionals):
+    # Create/update
     @field_serializer("canonical_url", "og_image_url", when_used="always")
     def serialize_url(self, v: HttpUrl | None) -> str | None:
         if isinstance(v, HttpUrl):
             return str(v)
         return v
+
+
+class BaseMetadataResponseSchema(BaseMetadataOptionals):
+    # Response
+    pass
