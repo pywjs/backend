@@ -1,6 +1,5 @@
 # apps/cms/schemas/navigation.py
-from typing import List
-
+from pydantic import field_serializer
 
 from core.schemas import (
     RequestSchema,
@@ -42,7 +41,13 @@ class NavigationItemUpdateSchema(
 class NavigationItemResponseSchema(
     NavigationItemOptionals, ULIDPrimaryKeyResponse, SlugResponse, ResponseSchema
 ):
+    title: str
+    order: int
     children: list["NavigationItemResponseSchema"] = []
+
+    @field_serializer("children", when_used="always")
+    def default_children(self, value):
+        return value or []
 
 
 class NavigationOptionals(Optionals):
@@ -72,7 +77,7 @@ class NavigationResponseSchema(
 ):
     name: str
     is_active: bool = True
-    items: List[NavigationItemResponseSchema] = []
+    items: list[NavigationItemResponseSchema] = []
 
 
 # Since the navigation items are self-referential, we need to use a forward reference
