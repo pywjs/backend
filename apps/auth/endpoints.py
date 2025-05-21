@@ -13,6 +13,7 @@ from apps.auth.exceptions import (
     InvalidRefreshTokenException,
 )
 from apps.auth.schemas import LoginRequest
+from core.security.exceptions import InvalidTokenException, ExpiredTokenException
 from core.security.jwt import TokenPair
 from apps.auth.services import AuthService
 from core.database import AsyncSession, get_session
@@ -108,8 +109,14 @@ class MessageResponse(BaseModel):
 @router.get("/verify", response_model=MessageResponse)
 async def verify_email(token: str, session: AsyncSession = Depends(get_session)):
     auth_service = AuthService(session=session)
-    if not auth_service.jwt.verify(token, token_type="verification"):
+    try:
+        if not auth_service.jwt.verify(token, token_type="verification"):
+            raise HTTPException(status_code=401, detail="Invalid verification token")
+    except InvalidTokenException:
         raise HTTPException(status_code=401, detail="Invalid verification token")
+    except ExpiredTokenException:
+        raise HTTPException(status_code=401, detail="Verification token expired")
+
     data = auth_service.jwt.token_data(token=token)
     user = await auth_service.user_service.get_by_id(data.id)
     if not user:

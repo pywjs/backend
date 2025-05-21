@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from typing import AsyncGenerator
 
 from core.security import get_pwd_hasher, get_jwt
-from core.security.jwt import TokenUser, TokenPair
+from core.security.jwt import TokenUser, TokenPair, VerificationToken
 from main import app
 from core.database import get_session
 from sqlmodel import SQLModel
@@ -198,3 +198,21 @@ async def get_token_pair_for_user() -> callable:
         return jwt.token_pair(token_user)
 
     return _token_pair
+
+
+@pytest.fixture
+async def get_verification_token_for_user() -> callable:
+    jwt = get_jwt()
+
+    async def _verification_token(user: User) -> VerificationToken:
+        token_user = TokenUser(
+            id=user.id,
+            email=str(user.email),
+            is_active=user.is_active,
+            is_staff=user.is_staff,
+            is_admin=user.is_admin,
+            is_verified=user.is_verified,
+        )
+        return jwt.verification_token(token_user)
+
+    return _verification_token
