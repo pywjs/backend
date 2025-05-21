@@ -4,7 +4,7 @@ from typing import Literal
 
 from sqlmodel import Field
 from pydantic import HttpUrl, field_serializer
-from core.schemas import RequestSchema, ResponseSchema
+from core.schemas import RequestSchema, ResponseSchema, SlugRequest, PublishableRequest
 
 
 class BaseContentSchema(RequestSchema):
@@ -19,6 +19,14 @@ class BaseContentSchema(RequestSchema):
     # PublishableMixin
     is_published: bool = False
     published_at: datetime | None = None
+
+
+class BaseContentRequest(SlugRequest, PublishableRequest, RequestSchema):
+    title: str
+    body_json: dict | None = None
+    body_html: str | None = None
+    body_markdown: str | None = None
+    body_field: Literal["json", "html", "markdown"] = "json"
 
 
 class BaseContentUpdateSchema(RequestSchema):
