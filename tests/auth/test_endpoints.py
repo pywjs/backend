@@ -142,6 +142,8 @@ class TestRefresh:
         form_data = {
             "grant_type": "refresh_token",
             "refresh_token": token_pair.refresh_token,
+            "client_id": "",
+            "client_secret": "",
         }
         response = await client.post("/auth/refresh", data=form_data)
         assert response.status_code == 200
@@ -157,6 +159,8 @@ class TestRefresh:
         form_data = {
             "grant_type": "refresh_token",
             "refresh_token": token_pair.access_token,  # Use access token instead of refresh token
+            "client_id": "",
+            "client_secret": "",
         }
         response = await client.post("/auth/refresh", data=form_data)
         assert response.status_code == 401
@@ -171,6 +175,8 @@ class TestRefresh:
         form_data = {
             "grant_type": "invalid_grant_type",
             "refresh_token": token_pair.refresh_token,
+            "client_id": "",
+            "client_secret": "",
         }
         response = await client.post("/auth/refresh", data=form_data)
         assert response.status_code == 400
