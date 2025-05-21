@@ -1,4 +1,5 @@
 # tests/conftest.py
+from fastapi import FastAPI
 from httpx import AsyncClient, ASGITransport
 import pytest
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -7,7 +8,7 @@ from typing import AsyncGenerator
 
 from core.security import get_pwd_hasher, get_jwt
 from core.security.jwt import TokenUser, TokenPair, VerificationToken
-from main import app
+from main import app as main_app
 from core.database import get_session
 from sqlmodel import SQLModel
 import asyncio
@@ -60,7 +61,7 @@ async def override_get_session() -> AsyncGenerator[AsyncSession, None]:
 
 
 # noinspection PyUnresolvedReferences
-app.dependency_overrides[get_session] = override_get_session
+main_app.dependency_overrides[get_session] = override_get_session
 
 
 # ----------------------------------
@@ -94,11 +95,18 @@ def anyio_backend():
 
 
 @pytest.fixture
-async def client():
-    """Async test client using ASGITransport."""
+async def client(app: FastAPI) -> AsyncGenerator[AsyncClient, None]:
+    """General Purpose Async test client using ASGITransport that depends on an app fixture."""
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         yield client
+
+
+# Default app for testing
+@pytest.fixture
+def app() -> FastAPI:
+    """Default app for testing."""
+    return main_app  # imported from main.py
 
 
 # ----------------------------------
