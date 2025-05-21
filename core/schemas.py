@@ -1,6 +1,7 @@
 # core/schemas.py
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from ulid import ULID
+from datetime import datetime
 
 
 # Since the schemas are pure API schemas, not tied to the DB, we use BaseModel from Pydantic instead of the SQLModel.
@@ -28,3 +29,38 @@ class ResponseSchema(_BaseSchema):
     """
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ULIDPrimaryKeyRequest(RequestSchema):
+    """Mixin for request schemas with ULID primary keys.
+    Fields:
+        - id: ULID primary key
+    """
+
+    id: ULID
+
+
+class ULIDPrimaryKeyResponse(ResponseSchema):
+    id: str
+
+
+class TimestampResponse(ResponseSchema):
+    created_at: datetime
+    updated_at: datetime
+
+
+class TimestampRequest(RequestSchema):
+    created_at: datetime | None = Field(default=None)
+    updated_at: datetime | None = Field(default=None)
+
+
+class PublishableRequest(RequestSchema):
+    is_published: bool | None = False
+    published_at: datetime | None = None
+    unpublished_at: datetime | None = None
+
+
+class PublishableResponse(ResponseSchema):
+    is_published: bool | None = False
+    published_at: datetime | None = None
+    unpublished_at: datetime | None = None
