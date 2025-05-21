@@ -2,6 +2,7 @@
 
 from apps.cms.schemas.post import PostCreate, PostUpdate
 from apps.cms.models.post import Post
+from core.services import BaseService
 from utils.text import slugify
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -58,3 +59,8 @@ async def delete_post(post_id: str, session: AsyncSession) -> bool:
     await session.delete(post)
     await session.commit()
     return True
+
+
+class PostService(BaseService):
+    def __init__(self, session: AsyncSession):
+        super().__init__(Post, session)

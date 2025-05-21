@@ -2,6 +2,7 @@
 
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
+from core.services import BaseService
 
 from apps.cms.models.page import Page
 from apps.cms.schemas.page import PageCreate, PageUpdate
@@ -59,3 +60,8 @@ async def delete_page(page_id: str, session: AsyncSession) -> bool:
     await session.delete(page)
     await session.commit()
     return True
+
+
+class PageService(BaseService):
+    def __init__(self, session: AsyncSession):
+        super().__init__(model=Page, session=session)

@@ -23,6 +23,8 @@ class RequestSchema(_BaseSchema):
 
 # <- Base for output/response schemas
 class ResponseSchema(_BaseSchema):
-    """Base schema for response data."""
+    """Base schema for response data.
+    Sets the `from_attributes` config to True, so that the model will be created from attributes
+    """
 
     model_config = ConfigDict(from_attributes=True)

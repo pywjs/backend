@@ -4,9 +4,11 @@ from typing import Literal
 
 from sqlmodel import SQLModel, Field
 from pydantic import HttpUrl, field_serializer
+from core.schemas import RequestSchema
 
 
-class BaseContentSchema(SQLModel):
+class BaseContentSchema(RequestSchema):
+    # For create requests
     title: str
     slug: str
     body_json: dict | None = None
