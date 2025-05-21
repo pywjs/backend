@@ -15,6 +15,10 @@ class _BaseSchema(BaseModel):
     )
 
 
+class Optionals(_BaseSchema):
+    pass
+
+
 # -> Base for input/request schemas
 class RequestSchema(_BaseSchema):
     """Base schema for request data."""
