@@ -1,4 +1,5 @@
 # tests/conftest.py
+from fastapi import FastAPI
 from httpx import AsyncClient, ASGITransport
 import pytest
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -6,8 +7,8 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from typing import AsyncGenerator
 
 from core.security import get_pwd_hasher, get_jwt
-from core.security.jwt import TokenUser, TokenPair
-from main import app
+from core.security.jwt import TokenUser, TokenPair, VerificationToken
+from main import app as main_app
 from core.database import get_session
 from sqlmodel import SQLModel
 import asyncio
@@ -60,7 +61,7 @@ async def override_get_session() -> AsyncGenerator[AsyncSession, None]:
 
 
 # noinspection PyUnresolvedReferences
-app.dependency_overrides[get_session] = override_get_session
+main_app.dependency_overrides[get_session] = override_get_session
 
 
 # ----------------------------------
@@ -94,11 +95,18 @@ def anyio_backend():
 
 
 @pytest.fixture
-async def client():
-    """Async test client using ASGITransport."""
+async def client(app: FastAPI) -> AsyncGenerator[AsyncClient, None]:
+    """General Purpose Async test client using ASGITransport that depends on an app fixture."""
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         yield client
+
+
+# Default app for testing
+@pytest.fixture
+def app() -> FastAPI:
+    """Default app for testing."""
+    return main_app  # imported from main.py
 
 
 # ----------------------------------
@@ -198,3 +206,21 @@ async def get_token_pair_for_user() -> callable:
         return jwt.token_pair(token_user)
 
     return _token_pair
+
+
+@pytest.fixture
+async def get_verification_token_for_user() -> callable:
+    jwt = get_jwt()
+
+    async def _verification_token(user: User) -> VerificationToken:
+        token_user = TokenUser(
+            id=user.id,
+            email=str(user.email),
+            is_active=user.is_active,
+            is_staff=user.is_staff,
+            is_admin=user.is_admin,
+            is_verified=user.is_verified,
+        )
+        return jwt.verification_token(token_user)
+
+    return _verification_token

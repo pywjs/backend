@@ -121,7 +121,9 @@ class JWT:
             return payload
         except _jwt.ExpiredSignatureError:
             raise ExpiredTokenException
-        except _jwt.InvalidTokenError:
+        except (_jwt.InvalidTokenError, _jwt.InvalidSignatureError, _jwt.DecodeError):
+            raise InvalidTokenException
+        except ValueError:
             raise InvalidTokenException
 
     def _create_jwt_token(self, data: dict[str, Any], expire_delta: timedelta) -> str:

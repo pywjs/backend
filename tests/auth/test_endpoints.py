@@ -142,6 +142,8 @@ class TestRefresh:
         form_data = {
             "grant_type": "refresh_token",
             "refresh_token": token_pair.refresh_token,
+            "client_id": "",
+            "client_secret": "",
         }
         response = await client.post("/auth/refresh", data=form_data)
         assert response.status_code == 200
@@ -157,7 +159,47 @@ class TestRefresh:
         form_data = {
             "grant_type": "refresh_token",
             "refresh_token": token_pair.access_token,  # Use access token instead of refresh token
+            "client_id": "",
+            "client_secret": "",
         }
         response = await client.post("/auth/refresh", data=form_data)
         assert response.status_code == 401
         assert "Invalid refresh token" in response.json()["detail"]
+
+    # Test with an invalid grant type
+    @pytest.mark.anyio
+    async def test_refresh_invalid_grant_type(
+        self, client: AsyncClient, create_test_user, get_token_pair_for_user
+    ):
+        token_pair = await get_token_pair_for_user(create_test_user)
+        form_data = {
+            "grant_type": "invalid_grant_type",
+            "refresh_token": token_pair.refresh_token,
+            "client_id": "",
+            "client_secret": "",
+        }
+        response = await client.post("/auth/refresh", data=form_data)
+        assert response.status_code == 400
+        assert "Invalid grant_type" in response.json()["detail"]
+
+
+# ---------------------------------------------
+# Test auth/verify endpoint
+# ---------------------------------------------
+class TestVerification:
+    # Test verify with valid token
+    @pytest.mark.anyio
+    async def test_verify_success(
+        self, client: AsyncClient, create_test_user, get_verification_token_for_user
+    ):
+        token = await get_verification_token_for_user(create_test_user)
+        response = await client.get("/auth/verify", params={"token": token.code})
+        assert response.status_code == 200
+        assert response.json()["message"] == "Email verified successfully"
+
+    # Test verify with invalid token
+    @pytest.mark.anyio
+    async def test_verify_invalid_token(self, client: AsyncClient):
+        response = await client.get("/auth/verify", params={"token": "invalid_token"})
+        assert response.status_code == 401
+        assert response.json()["detail"] == "Invalid verification token"

@@ -42,3 +42,6 @@ addopts = [
     "--strict-markers",
     "--ignore=docs_src",
 ]
+filterwarnings = [
+    "ignore::DeprecationWarning:passlib.*",
+]
