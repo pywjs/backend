@@ -66,6 +66,11 @@ history:
 	@./scripts/alembic.sh history
 
 
+## List the project structure (tree command)
+tree:
+	@echo "Listing the project structure"
+	@tree -I 'node_modules|.venv|.git|__pycache__|.pytest_cache|htmlcov|.coverage' -L 2
+	@echo "Done"
 
 # Prevent Make from treating extra words as targets
 %:
