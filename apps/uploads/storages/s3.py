@@ -8,6 +8,8 @@ from core.config import get_settings
 
 
 class S3Storage(BaseStorage):
+    name = "s3"
+
     def __init__(self, public: bool = False):
         self.public = public
         self._settings = get_settings()
@@ -35,6 +37,14 @@ class S3Storage(BaseStorage):
         async with session.client(**self.s3_client_kwargs) as s3:
             await s3.delete_object(Bucket=self.bucket_name, Key=file_name)
 
-    def get_url(self, file_name: str) -> str:
-        settings = get_settings()
-        return f"{settings.S3_ENDPOINT_URL}/{self.bucket_name}/{file_name}"
+    async def get_url(self, file_name: str) -> str:
+        if self.public:
+            return f"{self._settings.S3_ENDPOINT_URL}/{self.bucket_name}/{file_name}"
+        else:
+            session = aioboto3.Session()
+            async with session.client(**self.s3_client_kwargs) as s3:
+                return await s3.generate_presigned_url(
+                    ClientMethod="get_object",
+                    Params={"Bucket": self.bucket_name, "Key": file_name},
+                    ExpiresIn=3600,
+                )

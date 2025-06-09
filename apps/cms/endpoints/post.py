@@ -4,18 +4,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from apps.cms.schemas.post import PostCreate, PostUpdate, PostRead
-from apps.cms.services.post import (
-    create_post,
-    update_post,
-    delete_post,
-    get_post_by_id,
-    get_post_by_slug,
-    list_posts,
-)
-
+from apps.cms.services.post import PostService
 from core.database import get_session
 
 router = APIRouter()
+
+
+def get_post_service(session: AsyncSession = Depends(get_session)) -> PostService:
+    return PostService(session=session)
 
 
 @router.post(
@@ -24,18 +20,24 @@ router = APIRouter()
     status_code=status.HTTP_201_CREATED,
     summary="Create a new Post",
 )
-async def create(data: PostCreate, session: AsyncSession = Depends(get_session)):
-    return await create_post(data=data, session=session)
+async def create_post(
+    data: PostCreate,
+    service: PostService = Depends(get_post_service),
+):
+    return await service.create(data)
 
 
 @router.get("/", response_model=list[PostRead], summary="List all Posts")
-async def list_all(session: AsyncSession = Depends(get_session)):
-    return await list_posts(session=session)
+async def list_posts(service: PostService = Depends(get_post_service)):
+    return await service.get_all()
 
 
 @router.get("/{post_id}", response_model=PostRead, summary="Get a Post by ID")
-async def get_by_id(post_id: str, session: AsyncSession = Depends(get_session)):
-    post = await get_post_by_id(post_id=post_id, session=session)
+async def get_post_by_id(
+    post_id: str,
+    service: PostService = Depends(get_post_service),
+):
+    post = await service.get_by_id(post_id)
     if not post:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Post not found"
@@ -44,33 +46,42 @@ async def get_by_id(post_id: str, session: AsyncSession = Depends(get_session)):
 
 
 @router.get("/slug/{slug}", response_model=PostRead, summary="Get a Post by Slug")
-async def get_by_slug(slug: str, session: AsyncSession = Depends(get_session)):
-    post = await get_post_by_slug(slug=slug, session=session)
-    if not post:
+async def get_post_by_slug(
+    slug: str,
+    service: PostService = Depends(get_post_service),
+):
+    posts = await service.filter_by(slug=slug)
+    if not posts:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Post not found"
         )
-    return post
+    return posts[0]
 
 
 @router.patch("/{post_id}", response_model=PostRead, summary="Update a Post")
-async def update(
-    post_id: str, data: PostUpdate, session: AsyncSession = Depends(get_session)
+async def update_post(
+    post_id: str,
+    data: PostUpdate,
+    service: PostService = Depends(get_post_service),
 ):
-    post = await update_post(post_id=post_id, data=data, session=session)
-    if not post:
+    try:
+        return await service.update_by_id(post_id, data.model_dump(exclude_unset=True))
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Post not found"
         )
-    return post
 
 
 @router.delete(
     "/{post_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete a Post"
 )
-async def delete(post_id: str, session: AsyncSession = Depends(get_session)):
-    post = await delete_post(post_id=post_id, session=session)
-    if not post:
+async def delete_post(
+    post_id: str,
+    service: PostService = Depends(get_post_service),
+):
+    try:
+        await service.delete_by_id(post_id)
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Post not found"
         )

@@ -28,10 +28,10 @@ app = FastAPI(
 # ------------------------------------------
 # Routers
 # ------------------------------------------
-app.include_router(auth_router, prefix="/auth", tags=["auth"])
-app.include_router(users_router, prefix="/users", tags=["users"])
-app.include_router(cms_router, prefix="/cms", tags=["cms"])
-app.include_router(uploads_router, prefix="/uploads", tags=["uploads"])
+app.include_router(auth_router, prefix="/auth")
+app.include_router(users_router, prefix="/users")
+app.include_router(cms_router, prefix="/cms")
+app.include_router(uploads_router, prefix="/uploads")
 
 
 # Health Check

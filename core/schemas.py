@@ -15,6 +15,15 @@ class _BaseSchema(BaseModel):
     )
 
 
+class Optionals(_BaseSchema):
+    """
+    Base for mixins with optional fields grouped for reuse across request/update schemas.
+    Allows shared validation or metadata injection in the future.
+    """
+
+    pass
+
+
 # -> Base for input/request schemas
 class RequestSchema(_BaseSchema):
     """Base schema for request data."""
