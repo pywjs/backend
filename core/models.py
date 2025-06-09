@@ -34,7 +34,11 @@ Note: without `type: ignore` PyCharm will complain about the type of `created_at
 
 
 class TimestampMixin:
-    """Mixin for models with created_at and updated_at timestamps."""
+    """Mixin for models with created_at and updated_at timestamps.
+    Fields:
+        - created_at: datetime when the record was created
+        - updated_at: datetime when the record was last updated
+    """
 
     created_at: datetime = Field(
         default_factory=current_time,
@@ -47,7 +51,12 @@ class TimestampMixin:
 
 
 class PublishableMixin:
-    """Mixin for models with publishable fields."""
+    """Mixin for models with publishable fields.
+    Fields:
+        - is_published: boolean flag for published content
+        - published_at: datetime when the record was published
+        - unpublished_at: datetime when the record was unpublished
+    """
 
     is_published: bool = Field(default=False)
     published_at: datetime | None = Field(default=None, sa_type=DateTime(timezone=True))  # type: ignore
@@ -58,13 +67,20 @@ class PublishableMixin:
 
 
 class SlugMixin:
-    """Mixin for models with slug fields."""
+    """Mixin for models with slug fields.
+    Fields:
+        - slug: string unique slug for the model
+    """
 
     slug: str = Field(index=True, unique=True)  # Unique slug for the model
 
 
 class SoftDeleteMixin:
-    """Mixin for models with soft delete fields."""
+    """Mixin for models with soft delete fields.
+    Fields:
+        - is_deleted: boolean flag for soft delete
+        - deleted_at: datetime when the record was softly deleted
+    """
 
     is_deleted: bool = Field(default=False, index=True)  # Soft delete flag
     deleted_at: datetime | None = Field(default=None, sa_type=DateTime(timezone=True))  # type: ignore
@@ -73,7 +89,16 @@ class SoftDeleteMixin:
 class BaseTable(
     _BaseModel, ULIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin, table=False
 ):
-    """Base class for all table models in the application."""
+    """Base class for all table models in the application.
+    Fields:
+        - id: ULID primary key
+
+        - created_at: datetime when the record was created
+        - updated_at: datetime when the record was last updated
+
+        - is_deleted: boolean flag for soft delete
+        - deleted_at: datetime when the record was softly deleted
+    """
 
     # This class is not a table itself, but can be used as a base for other models
     # that need to inherit from it.

@@ -5,6 +5,8 @@ from typing import BinaryIO
 
 
 class BaseStorage(ABC):
+    name: str
+
     @abstractmethod
     async def upload_file(self, file: BinaryIO, file_name: str) -> str: ...
 
@@ -12,4 +14,4 @@ class BaseStorage(ABC):
     async def delete_file(self, file_name: str) -> None: ...
 
     @abstractmethod
-    def get_url(self, file_name: str) -> str: ...
+    async def get_url(self, file_name: str) -> str: ...

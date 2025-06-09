@@ -3,32 +3,35 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from apps.cms.schemas.page import PageCreate, PageUpdate, PageRead
-from apps.cms.services.page import (
-    create_page,
-    update_page,
-    delete_page,
-    get_page_by_id,
-    get_page_by_slug,
-    list_pages,
-)
+from apps.cms.services.page import PageService
 from core.database import get_session
 
 router = APIRouter()
 
 
+def get_page_service(session: AsyncSession = Depends(get_session)) -> PageService:
+    return PageService(session=session)
+
+
 @router.post("/", response_model=PageRead, status_code=status.HTTP_201_CREATED)
-async def create(data: PageCreate, session: AsyncSession = Depends(get_session)):
-    return await create_page(data=data, session=session)
+async def create_page(
+    data: PageCreate,
+    service: PageService = Depends(get_page_service),
+):
+    return await service.create(data)
 
 
 @router.get("/", response_model=list[PageRead])
-async def list_all(session: AsyncSession = Depends(get_session)):
-    return await list_pages(session=session)
+async def list_pages(service: PageService = Depends(get_page_service)):
+    return await service.get_all()
 
 
 @router.get("/{page_id}", response_model=PageRead)
-async def get_by_id(page_id: str, session: AsyncSession = Depends(get_session)):
-    page = await get_page_by_id(page_id=page_id, session=session)
+async def get_page_by_id(
+    page_id: str,
+    service: PageService = Depends(get_page_service),
+):
+    page = await service.get_by_id(page_id)
     if not page:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Page not found"
@@ -37,32 +40,40 @@ async def get_by_id(page_id: str, session: AsyncSession = Depends(get_session)):
 
 
 @router.get("/slug/{slug}", response_model=PageRead)
-async def get_by_slug(slug: str, session: AsyncSession = Depends(get_session)):
-    page = await get_page_by_slug(slug=slug, session=session)
-    if not page:
+async def get_page_by_slug(
+    slug: str,
+    service: PageService = Depends(get_page_service),
+):
+    pages = await service.filter_by(slug=slug)
+    if not pages:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Page not found"
         )
-    return page
+    return pages[0]
 
 
 @router.patch("/{page_id}", response_model=PageRead)
-async def update(
-    page_id: str, data: PageUpdate, session: AsyncSession = Depends(get_session)
+async def update_page(
+    page_id: str,
+    data: PageUpdate,
+    service: PageService = Depends(get_page_service),
 ):
-    page = await update_page(page_id=page_id, data=data, session=session)
-    if not page:
+    try:
+        return await service.update_by_id(page_id, data.model_dump(exclude_unset=True))
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Page not found"
         )
-    return page
 
 
 @router.delete("/{page_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete(page_id: str, session: AsyncSession = Depends(get_session)):
-    page = await delete_page(page_id=page_id, session=session)
-    if not page:
+async def delete_page(
+    page_id: str,
+    service: PageService = Depends(get_page_service),
+):
+    try:
+        await service.delete_by_id(page_id)
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Page not found"
         )
-    return None

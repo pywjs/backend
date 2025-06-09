@@ -1,32 +1,73 @@
 # apps/cms/schemas/base.py
-from datetime import datetime
 from typing import Literal
 
-from sqlmodel import SQLModel, Field
-from pydantic import HttpUrl, field_serializer
+from sqlmodel import Field
+from pydantic import HttpUrl, field_serializer, BaseModel
+
+from core.schemas import (
+    SlugCreateRequest,
+    RequestSchema,
+    SlugUpdateRequest,
+    SlugResponse,
+    ULIDPrimaryKeyResponse,
+    TimestampResponse,
+    PublishableCreateRequest,
+    PublishableUpdateRequest,
+    PublishableResponse,
+    ResponseSchema,
+    TimestampRequest,
+)
+from utils.text import slugify
 
 
-class BaseContentSchema(SQLModel):
-    title: str
-    slug: str
+class BaseContentOptionals(BaseModel):
+    """Fields that are optional for create/update fields."""
+
     body_json: dict | None = None
     body_html: str | None = None
     body_markdown: str | None = None
     body_field: Literal["json", "html", "markdown"] = "json"
-    is_published: bool = False
 
 
-class BaseContentUpdateSchema(SQLModel):
+class BaseContentCreateSchema(
+    BaseContentOptionals,
+    SlugCreateRequest,
+    PublishableCreateRequest,
+    RequestSchema,
+):
+    title: str
+
+    @field_serializer("slug")
+    def serialize_slug(self, v: str) -> str:
+        return slugify(v) if v else v
+
+
+class BaseContentUpdateSchema(
+    BaseContentOptionals,
+    SlugUpdateRequest,
+    PublishableUpdateRequest,
+    RequestSchema,
+):
     title: str | None = None
-    slug: str | None = None
-    body_json: dict | None = None
-    body_html: str | None = None
-    body_markdown: str | None = None
-    body_field: Literal["json", "html", "markdown"] | None = None
-    is_published: bool | None = None
+
+    @field_serializer("slug")
+    def serialize_slug(self, v: str) -> str:
+        return slugify(v) if v else v
 
 
-class BaseMetadataSchema(SQLModel):
+class BaseContentResponseSchema(
+    BaseContentOptionals,
+    ULIDPrimaryKeyResponse,
+    SlugResponse,
+    PublishableResponse,
+    TimestampResponse,
+    ResponseSchema,
+):
+    title: str
+
+
+class BaseMetadataOptionals(BaseModel):
+    # Create/Update requests
     # SEO fields
     meta_title: str | None = None
     meta_description: str | None = None
@@ -39,6 +80,9 @@ class BaseMetadataSchema(SQLModel):
     og_type: str | None = Field(default="website")
     structured_data: dict | None = None
 
+
+class BaseMetadataRequestSchema(BaseMetadataOptionals):
+    # Create/update
     @field_serializer("canonical_url", "og_image_url", when_used="always")
     def serialize_url(self, v: HttpUrl | None) -> str | None:
         if isinstance(v, HttpUrl):
@@ -46,7 +90,12 @@ class BaseMetadataSchema(SQLModel):
         return v
 
 
-class BaseTimestampSchema(SQLModel):
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
-    published_at: datetime | None = None
+class BaseMetadataResponseSchema(BaseMetadataOptionals):
+    # Response
+    pass
+
+
+# Alias classes for backward compatibility
+BaseContentSchema = BaseContentCreateSchema
+BaseMetadataSchema = BaseMetadataRequestSchema
+BaseTimestampSchema = TimestampRequest

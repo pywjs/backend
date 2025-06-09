@@ -61,6 +61,11 @@ class BaseService(Generic[T]):
         result = await self.session.exec(stmt)
         return result.one()
 
+    async def exists(self, **kwargs) -> bool:
+        stmt = select(func.count()).select_from(self.model).filter_by(**kwargs)
+        result = await self.session.exec(stmt)
+        return result.one() > 0
+
     async def paginate(
         self,
         stmt: Select | None = None,

@@ -7,6 +7,8 @@ from core.config import get_settings
 
 
 class LocalFileStorage(BaseStorage):
+    name = "local"
+
     def __init__(self, public: bool = False):
         self.public = public
         self._settings = get_settings()
@@ -28,5 +30,5 @@ class LocalFileStorage(BaseStorage):
         if file_path.exists():
             file_path.unlink()
 
-    def get_url(self, file_name: str) -> str:
+    async def get_url(self, file_name: str) -> str:
         return f"{self.uploads_url}/{file_name}"
