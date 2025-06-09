@@ -15,6 +15,7 @@ from core.schemas import (
     PublishableUpdateRequest,
     PublishableResponse,
     ResponseSchema,
+    TimestampRequest,
 )
 from utils.text import slugify
 
@@ -92,3 +93,9 @@ class BaseMetadataRequestSchema(BaseMetadataOptionals):
 class BaseMetadataResponseSchema(BaseMetadataOptionals):
     # Response
     pass
+
+
+# Alias classes for backward compatibility
+BaseContentSchema = BaseContentCreateSchema
+BaseMetadataSchema = BaseMetadataRequestSchema
+BaseTimestampSchema = TimestampRequest

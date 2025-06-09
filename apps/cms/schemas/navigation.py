@@ -59,7 +59,7 @@ class NavigationCreateSchema(
     SlugCreateRequest,
     RequestSchema,
 ):
-    name: str
+    title: str
     is_active: bool = True
 
 
@@ -68,14 +68,14 @@ class NavigationUpdateSchema(
     SlugUpdateRequest,
     RequestSchema,
 ):
-    name: str | None = None
+    title: str | None = None
     is_active: bool | None = None
 
 
 class NavigationResponseSchema(
     NavigationOptionals, ULIDPrimaryKeyResponse, SlugResponse, ResponseSchema
 ):
-    name: str
+    title: str
     is_active: bool = True
     items: list[NavigationItemResponseSchema] = []
 

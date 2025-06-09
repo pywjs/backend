@@ -6,7 +6,7 @@ from core.models import BaseTable, SlugMixin
 
 
 class Navigation(BaseTable, SlugMixin, table=True):
-    name: str  # e.g. "main", "footer", "sidebar"
+    title: str  # e.g. "main", "footer", "sidebar"
     is_active: bool = True  # Is this navigation active?
 
     items: list["NavigationItem"] = Relationship(back_populates="navigation")
