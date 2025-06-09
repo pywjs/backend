@@ -14,7 +14,7 @@ from apps.uploads.services import (
 from core.database import get_session
 from core.security.jwt import TokenUser
 
-router = APIRouter()
+router = APIRouter(tags=["uploads"])
 
 
 # ------------------------------------------

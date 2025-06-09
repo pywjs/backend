@@ -18,7 +18,7 @@ from core.security.jwt import TokenPair
 from apps.auth.services import AuthService
 from core.database import AsyncSession, get_session
 
-router = APIRouter()
+router = APIRouter(tags=["auth"])
 
 
 # ------------------------------------------

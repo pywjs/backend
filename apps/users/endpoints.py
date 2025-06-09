@@ -20,7 +20,7 @@ from apps.users.services import (
 from core.security.jwt import TokenUser
 from utils.email import send_verification_email
 
-router = APIRouter()
+router = APIRouter(tags=["users"])
 
 
 # ------------------------------------------
